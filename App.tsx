@@ -57,6 +57,7 @@ const App: React.FC = () => {
   const [activeView, setActiveView] = useState<View>('dashboard');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [editingSale, setEditingSale] = useState<Sale | null>(null);
+  const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [paymentSuggestion, setPaymentSuggestion] = useState<Sale | null>(null);
   const [isBackupModalOpen, setBackupModalOpen] = useState(false);
@@ -71,6 +72,11 @@ const App: React.FC = () => {
   const handleEditSale = (sale: Sale) => {
     setEditingSale(sale);
     setActiveView('add_sale');
+  };
+  
+  const handleEditPayment = (payment: Payment) => {
+    setEditingPayment(payment);
+    setActiveView('add_payment');
   };
 
   const handleViewClient = (clientId: string) => {
@@ -88,6 +94,12 @@ const App: React.FC = () => {
       }
   };
   
+  const handlePaymentSuccess = (isEditing: boolean) => {
+      showToast(isEditing ? 'Pagamento atualizado com sucesso!' : 'Pagamento registrado com sucesso!');
+      setEditingPayment(null);
+      setActiveView('dashboard');
+  };
+
   const handleNavigate = (view: View, clientId?: string) => {
       setPrefilledClientId(clientId || null);
       setActiveView(view);
@@ -114,15 +126,12 @@ const App: React.FC = () => {
       );
       case 'add_sale': return <SaleForm editingSale={editingSale} onSaleSuccess={handleSaleSuccess} prefilledClientId={prefilledClientId} />;
       case 'stock': return <StockManager />;
-      case 'add_payment': return <PaymentForm onPaymentSuccess={() => {
-          setActiveView('dashboard');
-          showToast('Pagamento registrado com sucesso!');
-      }} prefilledClientId={prefilledClientId} />;
+      case 'add_payment': return <PaymentForm editingPayment={editingPayment} onPaymentSuccess={handlePaymentSuccess} prefilledClientId={prefilledClientId} />;
       case 'reports': return <Reports />;
       case 'history': return <History />;
       case 'pending_payments': return <PendingPayments onViewClient={handleViewClient} />;
       case 'all_sales': return <AllSales onEditSale={handleEditSale} showToast={showToast} />;
-      case 'all_payments': return <AllPayments />;
+      case 'all_payments': return <AllPayments onEditPayment={handleEditPayment} showToast={showToast} />;
       default: return <Dashboard onNavigate={handleNavigate} />;
     }
   };
@@ -144,6 +153,7 @@ const App: React.FC = () => {
             <Button variant="secondary" onClick={() => {
                 setActiveView('dashboard');
                 setEditingSale(null);
+                setEditingPayment(null);
                 setSelectedClientId(null);
                 setPrefilledClientId(null);
             }}>
@@ -442,12 +452,19 @@ const AllSales: FC<{ onEditSale: (sale: Sale) => void; showToast: (msg: string) 
 }
 
 // --- ALL PAYMENTS ---
-const AllPayments: FC = () => {
-    const { payments, getClientById } = useData();
+const AllPayments: FC<{ onEditPayment: (payment: Payment) => void; showToast: (msg: string) => void; }> = ({ onEditPayment, showToast }) => {
+    const { payments, getClientById, deletePayment } = useData();
     const sortedPayments = useMemo(() =>
         [...payments].sort((a,b) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime()),
     [payments]);
     
+    const handleDelete = (paymentId: string) => {
+        if (window.confirm('Tem certeza que deseja excluir este recebimento?')) {
+            deletePayment(paymentId);
+            showToast('Recebimento excluído com sucesso!');
+        }
+    };
+
     return (
         <Card>
             <h1 className="text-2xl font-bold text-rose-800 mb-6">Todos os Recebimentos 💰</h1>
@@ -455,12 +472,18 @@ const AllPayments: FC = () => {
                  {sortedPayments.length > 0 ? sortedPayments.map(payment => {
                     const client = getClientById(payment.clientId);
                     return (
-                        <div key={payment.id} className="p-4 bg-emerald-50 border border-emerald-100 rounded-lg flex justify-between items-start">
+                        <div key={payment.id} className="p-4 bg-emerald-50 border border-emerald-100 rounded-lg flex justify-between items-center">
                             <div>
                                 <p className="font-bold text-gray-700">Pagamento de {client?.fullName || 'Cliente não encontrado'}</p>
                                 <p className="text-xs text-gray-500">{new Date(payment.paymentDate).toLocaleDateString('pt-BR')}</p>
                             </div>
-                            <p className="font-bold text-emerald-600">+{payment.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                            <div className="flex flex-col items-end justify-center ml-4">
+                                <p className="font-bold text-emerald-600 whitespace-nowrap">+{payment.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                                <div className="flex gap-3 mt-2">
+                                    <button onClick={() => onEditPayment(payment)} className="text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-blue-100 transition-colors" aria-label="Editar recebimento"><EditIcon/></button>
+                                    <button onClick={() => handleDelete(payment.id)} className="text-red-600 hover:text-red-800 p-1 rounded-full hover:bg-red-100 transition-colors" aria-label="Excluir recebimento"><TrashIcon/></button>
+                                </div>
+                            </div>
                         </div>
                     )
                 }) : <EmptyState icon={WalletIcon} title="Nenhum pagamento recebido" message="Todos os pagamentos registrados pelos clientes aparecerão aqui."/>}
@@ -848,8 +871,14 @@ const SaleForm: FC<{ editingSale?: Sale | null; onSaleSuccess: (sale: Sale, isEd
 };
 
 // --- PAYMENT FORM ---
-const PaymentForm: FC<{ onPaymentSuccess: () => void; prefilledClientId: string | null; }> = ({ onPaymentSuccess, prefilledClientId }) => {
-    const { clients, addPayment, clientBalances } = useData();
+const PaymentForm: FC<{ 
+    editingPayment?: Payment | null; 
+    onPaymentSuccess: (isEditing: boolean) => void; 
+    prefilledClientId: string | null; 
+}> = ({ onPaymentSuccess, prefilledClientId, editingPayment }) => {
+    const { clients, addPayment, updatePayment, clientBalances } = useData();
+    const isEditing = !!editingPayment;
+
     const [paymentData, setPaymentData] = useState({
         clientId: prefilledClientId || '',
         paymentDate: new Date().toISOString().split('T')[0],
@@ -859,19 +888,29 @@ const PaymentForm: FC<{ onPaymentSuccess: () => void; prefilledClientId: string 
     const [selectedClientBalance, setSelectedClientBalance] = useState<number | null>(null);
 
     useEffect(() => {
-        if(prefilledClientId) {
-            setPaymentData(prev => ({ ...prev, clientId: prefilledClientId }));
+        if (editingPayment) {
+            setPaymentData({
+                clientId: editingPayment.clientId,
+                paymentDate: editingPayment.paymentDate,
+                amount: String(editingPayment.amount),
+                observation: editingPayment.observation
+            });
+        } else if (prefilledClientId) {
+            setPaymentData(prev => ({ ...prev, clientId: prefilledClientId, amount: '0', observation: '' }));
         }
-    }, [prefilledClientId]);
+    }, [editingPayment, prefilledClientId]);
     
     useEffect(() => {
         if (paymentData.clientId) {
             const balance = clientBalances.get(paymentData.clientId);
-            setSelectedClientBalance(balance || 0);
+            const adjustedBalance = isEditing && editingPayment && paymentData.clientId === editingPayment.clientId
+                ? (balance || 0) + editingPayment.amount
+                : balance;
+            setSelectedClientBalance(adjustedBalance || 0);
         } else {
             setSelectedClientBalance(null);
         }
-    }, [paymentData.clientId, clientBalances]);
+    }, [paymentData.clientId, clientBalances, editingPayment, isEditing]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -884,19 +923,25 @@ const PaymentForm: FC<{ onPaymentSuccess: () => void; prefilledClientId: string 
             alert('Selecione um cliente e informe um valor maior que zero.');
             return;
         }
-        addPayment({
+        const paymentPayload = {
             ...paymentData,
             amount: Number(paymentData.amount)
-        });
+        };
         
-        onPaymentSuccess();
+        if (isEditing && editingPayment) {
+            updatePayment({ ...paymentPayload, id: editingPayment.id });
+        } else {
+            addPayment(paymentPayload);
+        }
+        
+        onPaymentSuccess(isEditing);
     };
     
     return (
          <Card>
-            <h1 className="text-2xl font-bold text-rose-800 mb-6">Receber Pagamento 💸</h1>
+            <h1 className="text-2xl font-bold text-rose-800 mb-6">{isEditing ? 'Editar Recebimento' : 'Receber Pagamento'} 💸</h1>
             <form onSubmit={handleSubmit} className="space-y-4 max-w-lg mx-auto">
-                <Select label="Cliente" name="clientId" value={paymentData.clientId} onChange={handleChange} required>
+                <Select label="Cliente" name="clientId" value={paymentData.clientId} onChange={handleChange} required disabled={isEditing}>
                     <option value="">Selecione uma cliente</option>
                     {clients.map(c => <option key={c.id} value={c.id}>{c.fullName}</option>)}
                 </Select>
@@ -916,7 +961,7 @@ const PaymentForm: FC<{ onPaymentSuccess: () => void; prefilledClientId: string 
                  </div>
                  <TextArea label="Observação" name="observation" value={paymentData.observation} onChange={handleChange} />
                  <div className="flex justify-end pt-4">
-                    <Button type="submit">Registrar Pagamento</Button>
+                    <Button type="submit">{isEditing ? 'Atualizar Pagamento' : 'Registrar Pagamento'}</Button>
                 </div>
             </form>
         </Card>

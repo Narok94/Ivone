@@ -28,6 +28,8 @@ interface DataContextType {
 
   payments: Payment[];
   addPayment: (payment: Omit<Payment, 'id'>) => void;
+  updatePayment: (payment: Payment) => void;
+  deletePayment: (paymentId: string) => void;
 
   clientBalances: Map<string, number>;
 
@@ -137,6 +139,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const newPayment: Payment = { ...paymentData, id: crypto.randomUUID() };
     setPayments(prev => [...prev, newPayment]);
   };
+  
+  const updatePayment = (updatedPayment: Payment) => {
+    setPayments(prev => prev.map(p => p.id === updatedPayment.id ? updatedPayment : p));
+  };
+
+  const deletePayment = (paymentId: string) => {
+    setPayments(prev => prev.filter(p => p.id !== paymentId));
+  };
 
   const clientBalances = useMemo(() => {
     const balances = new Map<string, number>();
@@ -166,7 +176,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     clients, addClient, updateClient, deleteClient, getClientById,
     stockItems, addStockItem, updateStockItemQuantity, deleteStockItem,
     sales, addSale, updateSale, deleteSale,
-    payments, addPayment,
+    payments, addPayment, updatePayment, deletePayment,
     clientBalances,
     getRawData,
     loadRawData,
