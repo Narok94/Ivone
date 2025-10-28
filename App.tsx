@@ -1,5 +1,6 @@
 
-import React, { useState, useMemo, FC, useEffect, ReactNode } from 'react';
+
+import React, { useState, useMemo, FC, useEffect, ReactNode, useRef } from 'react';
 import { useData } from './context/DataContext';
 import { Client, StockItem, Sale, Payment } from './types';
 import { Card, Button, Input, Modal, TextArea, Select } from './components/common';
@@ -20,6 +21,7 @@ const HistoryIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http
 const EditIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>);
 const TrashIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>);
 const SparklesIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 3a6 6 0 0 0 9 9a2 2 0 1 1-4 0a2 2 0 0 0-4-4a2 2 0 1 1 0-4a6 6 0 0 0-9-9a2 2 0 1 1 4 0a2 2 0 0 0 4 4a2 2 0 1 1 0 4Z"/></svg>);
+const ShieldIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>);
 
 // --- TOAST NOTIFICATION ---
 const Toast: FC<{ message: string; onClose: () => void }> = ({ message, onClose }) => {
@@ -57,6 +59,7 @@ const App: React.FC = () => {
   const [editingSale, setEditingSale] = useState<Sale | null>(null);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [paymentSuggestion, setPaymentSuggestion] = useState<Sale | null>(null);
+  const [isBackupModalOpen, setBackupModalOpen] = useState(false);
   
   // State for pre-filling forms
   const [prefilledClientId, setPrefilledClientId] = useState<string | null>(null);
@@ -97,7 +100,7 @@ const App: React.FC = () => {
 
   const renderView = () => {
     switch (activeView) {
-      case 'dashboard': return <DashboardNav setActiveView={setActiveView} />;
+      case 'dashboard': return <DashboardNav setActiveView={handleNavigate} />;
       case 'clients': return <ManageClients setActiveView={setActiveView} onViewClient={handleViewClient} showToast={showToast} />;
       case 'client_detail': return <ClientDetail clientId={selectedClientId!} onNavigate={handleNavigate} />;
       case 'add_client': return (
@@ -120,7 +123,7 @@ const App: React.FC = () => {
       case 'pending_payments': return <PendingPayments />;
       case 'all_sales': return <AllSales onEditSale={handleEditSale} showToast={showToast} />;
       case 'all_payments': return <AllPayments />;
-      default: return <DashboardNav setActiveView={setActiveView} />;
+      default: return <DashboardNav setActiveView={handleNavigate} />;
     }
   };
 
@@ -128,6 +131,7 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-pink-50 text-gray-800">
       {toastMessage && <Toast message={toastMessage} onClose={() => setToastMessage(null)} />}
       {paymentSuggestion && <PaymentSuggestionModal sale={paymentSuggestion} onClose={handleClosePaymentSuggestion} showToast={showToast}/>}
+      <BackupRestoreModal isOpen={isBackupModalOpen} onClose={() => setBackupModalOpen(false)} showToast={showToast}/>
 
       <header className="bg-white/70 backdrop-blur-lg p-4 shadow-md flex items-center justify-center sticky top-0 z-10">
          <h1 className="text-lg sm:text-xl md:text-2xl font-extrabold tracking-tight bg-gradient-to-r from-pink-500 to-rose-500 text-transparent bg-clip-text whitespace-nowrap">Sistema de vendas Ivone 💖✨</h1>
@@ -152,9 +156,98 @@ const App: React.FC = () => {
       <main className="p-4 md:p-10">
         {renderView()}
       </main>
+
+      <button
+        onClick={() => setBackupModalOpen(true)}
+        title="Backup e Restauração"
+        aria-label="Backup e Restauração"
+        className="fixed bottom-4 right-4 z-20 w-12 h-12 bg-white/60 backdrop-blur-md rounded-xl shadow-md border border-pink-100 flex items-center justify-center text-pink-500 hover:bg-white/80 hover:shadow-lg transition-all duration-300"
+      >
+        <ShieldIcon className="w-6 h-6" />
+      </button>
+
     </div>
   );
 };
+
+// --- BACKUP RESTORE MODAL ---
+const BackupRestoreModal: FC<{isOpen: boolean; onClose: () => void; showToast: (msg: string) => void}> = ({isOpen, onClose, showToast}) => {
+    const { getRawData, loadRawData } = useData();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleBackup = () => {
+        try {
+            const data = getRawData();
+            const jsonString = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const date = new Date().toISOString().split('T')[0];
+            a.download = `backup-vendas-ivone-${date}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('Backup baixado com sucesso!');
+        } catch (error) {
+            console.error("Erro ao criar backup:", error);
+            showToast('Ocorreu um erro ao criar o backup.');
+        }
+    };
+
+    const handleRestoreClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        if (window.confirm('Tem certeza que deseja restaurar os dados? TODOS os dados atuais serão substituídos por este backup. Esta ação não pode ser desfeita.')) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const text = e.target?.result;
+                    if (typeof text !== 'string') {
+                       throw new Error("Não foi possível ler o arquivo.");
+                    }
+                    const data = JSON.parse(text);
+                    loadRawData(data);
+                    showToast('Dados restaurados com sucesso!');
+                    onClose();
+                } catch (error) {
+                    console.error("Erro ao restaurar backup:", error);
+                    showToast('Erro ao restaurar. O arquivo pode estar corrompido.');
+                }
+            };
+            reader.readAsText(file);
+        }
+        // Reset file input
+        if(fileInputRef.current) fileInputRef.current.value = "";
+    };
+
+    return (
+        <Modal isOpen={isOpen} onClose={onClose} title="Backup e Restauração de Dados">
+            <div className="space-y-6">
+                <div>
+                    <h3 className="font-bold text-lg text-gray-700 mb-2">Fazer Backup</h3>
+                    <p className="text-sm text-gray-600 mb-4">Salve todos os seus dados (clientes, vendas, estoque e pagamentos) em um arquivo seguro no seu computador. Faça isso regularmente!</p>
+                    <Button onClick={handleBackup}>Baixar Arquivo de Backup</Button>
+                </div>
+                <div className="border-t pt-6">
+                    <h3 className="font-bold text-lg text-gray-700 mb-2">Restaurar de um Arquivo</h3>
+                    <p className="text-sm text-gray-600 mb-4">Recupere seus dados a partir de um arquivo de backup que você salvou anteriormente. </p>
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm mb-4">
+                       <span className="font-bold">Atenção:</span> Isso substituirá TODOS os dados atuais no aplicativo.
+                    </div>
+                    <Button onClick={handleRestoreClick} variant="secondary">Restaurar de um Arquivo</Button>
+                    <input type="file" accept=".json" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
+                </div>
+            </div>
+        </Modal>
+    )
+}
 
 // --- PAYMENT SUGGESTION MODAL ---
 const PaymentSuggestionModal: FC<{sale: Sale; onClose: () => void; showToast: (message: string) => void}> = ({ sale, onClose, showToast }) => {
@@ -788,14 +881,15 @@ const Reports: FC = () => {
     const { sales, clients, getClientById } = useData();
 
     const topClients = useMemo(() => {
-        // FIX: Correctly type the initial value for `reduce` to ensure proper type inference.
-        const clientTotals = sales.reduce((acc, sale) => {
+        // FIX: Use a generic type argument for `reduce` to correctly type the accumulator.
+        // This ensures `clientTotals` is correctly typed, resolving errors in subsequent operations.
+        const clientTotals = sales.reduce<Record<string, number>>((acc, sale) => {
             acc[sale.clientId] = (acc[sale.clientId] || 0) + sale.total;
             return acc;
-        }, {} as Record<string, number>);
+        }, {});
 
         return Object.entries(clientTotals)
-            .sort(([, a], [, b]) => b - a)
+            .sort((a, b) => b[1] - a[1])
             .slice(0, 5)
             .map(([clientId, total]) => ({
                 client: getClientById(clientId),
@@ -804,18 +898,19 @@ const Reports: FC = () => {
     }, [sales, getClientById]);
     
     const topProducts = useMemo(() => {
-        // FIX: Correctly type the initial value for `reduce` to ensure proper type inference.
-        const productTotals = sales.reduce((acc, sale) => {
+        // FIX: Use a generic type argument for `reduce` to correctly type the accumulator.
+        // This ensures `productTotals` is correctly typed, allowing access to properties like 'quantity'.
+        const productTotals = sales.reduce<Record<string, { quantity: number; total: number }>>((acc, sale) => {
             if (!acc[sale.productName]) {
                  acc[sale.productName] = { quantity: 0, total: 0 };
             }
             acc[sale.productName].quantity += sale.quantity;
             acc[sale.productName].total += sale.total;
             return acc;
-        }, {} as Record<string, { quantity: number; total: number }>);
+        }, {});
 
         return Object.entries(productTotals)
-            .sort(([, a], [, b]) => b.quantity - a.quantity)
+            .sort((a, b) => b[1].quantity - a[1].quantity)
             .slice(0, 5)
             .map(([productName, data]) => ({ productName, ...data }));
     }, [sales]);

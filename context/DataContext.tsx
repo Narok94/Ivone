@@ -2,6 +2,13 @@ import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import useLocalStorage from '../hooks/useLocalStorage';
 import { Client, StockItem, Sale, Payment } from '../types';
 
+interface RawData {
+  clients: Client[];
+  stockItems: StockItem[];
+  sales: Sale[];
+  payments: Payment[];
+}
+
 interface DataContextType {
   clients: Client[];
   addClient: (client: Omit<Client, 'id'>) => void;
@@ -23,6 +30,9 @@ interface DataContextType {
   addPayment: (payment: Omit<Payment, 'id'>) => void;
 
   clientBalances: Map<string, number>;
+
+  getRawData: () => RawData;
+  loadRawData: (data: RawData) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -137,13 +147,29 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
     return balances;
   }, [clients, sales, payments]);
+  
+  const getRawData = () => ({ clients, stockItems, sales, payments });
+  
+  const loadRawData = (data: RawData) => {
+      // Basic validation
+      if (data && Array.isArray(data.clients) && Array.isArray(data.stockItems) && Array.isArray(data.sales) && Array.isArray(data.payments)) {
+          setClients(data.clients);
+          setStockItems(data.stockItems);
+          setSales(data.sales);
+          setPayments(data.payments);
+      } else {
+          throw new Error("Arquivo de backup inválido ou corrompido.");
+      }
+  };
 
   const value = {
     clients, addClient, updateClient, deleteClient, getClientById,
     stockItems, addStockItem, updateStockItemQuantity, deleteStockItem,
     sales, addSale, updateSale, deleteSale,
     payments, addPayment,
-    clientBalances
+    clientBalances,
+    getRawData,
+    loadRawData,
   };
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
