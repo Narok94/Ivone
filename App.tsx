@@ -577,7 +577,7 @@ const ClientForm: FC<{ client?: Client | null; onDone: () => void }> = ({ client
 
 // --- MANAGE CLIENTS ---
 const ManageClients: FC<{ setActiveView: (view: View) => void; onViewClient: (clientId: string) => void; showToast: (msg: string) => void; }> = ({ setActiveView, onViewClient, showToast }) => {
-    const { clients, deleteClient } = useData();
+    const { clients, deleteClient, clientBalances } = useData();
     const [filter, setFilter] = useState('');
    
     const filteredClients = useMemo(() => {
@@ -624,15 +624,29 @@ const ManageClients: FC<{ setActiveView: (view: View) => void; onViewClient: (cl
                             <tr>
                                 <th className="p-3 rounded-l-lg">Nome</th>
                                 <th className="p-3 hidden md:table-cell">Telefone</th>
+                                <th className="p-3">Status</th>
                                 <th className="p-3 hidden lg:table-cell">E-mail</th>
                                 <th className="p-3 rounded-r-lg text-right">Ações</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredClients.map(client => (
+                            {filteredClients.map(client => {
+                                const balance = clientBalances.get(client.id) || 0;
+                                return (
                                 <tr key={client.id} onClick={() => onViewClient(client.id)} className="border-b border-pink-100/50 hover:bg-pink-50/50 cursor-pointer">
                                     <td className="p-3 font-medium">{client.fullName}</td>
                                     <td className="p-3 hidden md:table-cell">{client.phone}</td>
+                                    <td className="p-3">
+                                        {balance > 0 ? (
+                                            <span className="text-xs font-semibold inline-block py-1 px-2 rounded-full text-rose-700 bg-rose-100 whitespace-nowrap">
+                                                Devendo {balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                            </span>
+                                        ) : (
+                                            <span className="text-xs font-semibold inline-block py-1 px-2 rounded-full text-emerald-700 bg-emerald-100 whitespace-nowrap">
+                                                Em dia
+                                            </span>
+                                        )}
+                                    </td>
                                     <td className="p-3 hidden lg:table-cell">{client.email}</td>
                                     <td className="p-3">
                                         <div className="flex gap-2 justify-end">
@@ -640,7 +654,8 @@ const ManageClients: FC<{ setActiveView: (view: View) => void; onViewClient: (cl
                                         </div>
                                     </td>
                                 </tr>
-                            ))}
+                                )
+                            })}
                         </tbody>
                     </table>
                 </div>
@@ -703,7 +718,16 @@ const StockManager: FC = () => {
                     <Input label="Nome do Produto" name="name" value={newItem.name} onChange={handleNewItemChange} required />
                     <Input label="Tamanho" name="size" value={newItem.size} onChange={handleNewItemChange} />
                     <Input label="Código" name="code" type="number" value={newItem.code} onChange={handleNewItemChange} required />
-                    <Input label="Quantidade" name="quantity" type="number" min="0" value={newItem.quantity} onChange={handleNewItemChange} />
+                    <Input
+                        label="Quantidade"
+                        name="quantity"
+                        type="number"
+                        min="0"
+                        value={newItem.quantity}
+                        onChange={handleNewItemChange}
+                        onFocus={(e) => e.target.value === '0' && setNewItem(prev => ({...prev, quantity: ''}))}
+                        onBlur={(e) => e.target.value === '' && setNewItem(prev => ({...prev, quantity: '0'}))}
+                    />
                     <Button type="submit" className="md:col-start-5">Adicionar</Button>
                 </form>
             </Card>
@@ -855,7 +879,18 @@ const SaleForm: FC<{ editingSale?: Sale | null; onSaleSuccess: (sale: Sale, isEd
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <Input label="Quantidade" name="quantity" type="number" min="1" value={saleData.quantity} onChange={handleChange} required />
-                    <Input label="Valor Unitário (R$)" name="unitPrice" type="number" min="0" step="0.01" value={saleData.unitPrice} onChange={handleChange} required />
+                    <Input
+                        label="Valor Unitário (R$)"
+                        name="unitPrice"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={saleData.unitPrice}
+                        onChange={handleChange}
+                        onFocus={(e) => e.target.value === '0' && setSaleData(prev => ({...prev, unitPrice: ''}))}
+                        onBlur={(e) => e.target.value === '' && setSaleData(prev => ({...prev, unitPrice: '0'}))}
+                        required
+                    />
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Valor Total</label>
                         <p className="w-full px-3 py-2 border bg-gray-100 border-gray-300 rounded-lg font-bold text-lg text-pink-600">{total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
@@ -952,7 +987,18 @@ const PaymentForm: FC<{
                 )}
                  <Input label="Data do Pagamento" name="paymentDate" type="date" value={paymentData.paymentDate} onChange={handleChange} required />
                  <div>
-                    <Input label="Valor Recebido (R$)" name="amount" type="number" min="0.01" step="0.01" value={paymentData.amount} onChange={handleChange} required />
+                    <Input
+                        label="Valor Recebido (R$)"
+                        name="amount"
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        value={paymentData.amount}
+                        onChange={handleChange}
+                        onFocus={(e) => e.target.value === '0' && setPaymentData(prev => ({...prev, amount: ''}))}
+                        onBlur={(e) => e.target.value === '' && setPaymentData(prev => ({...prev, amount: '0'}))}
+                        required
+                    />
                      {selectedClientBalance !== null && selectedClientBalance > 0 && (
                         <button type="button" onClick={() => setPaymentData(prev => ({...prev, amount: String(selectedClientBalance)}))} className="text-sm text-pink-600 hover:underline mt-1">
                             Preencher com valor total
