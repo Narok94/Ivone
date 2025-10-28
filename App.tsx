@@ -100,7 +100,7 @@ const App: React.FC = () => {
 
   const renderView = () => {
     switch (activeView) {
-      case 'dashboard': return <DashboardNav setActiveView={handleNavigate} />;
+      case 'dashboard': return <Dashboard onNavigate={handleNavigate} />;
       case 'clients': return <ManageClients setActiveView={setActiveView} onViewClient={handleViewClient} showToast={showToast} />;
       case 'client_detail': return <ClientDetail clientId={selectedClientId!} onNavigate={handleNavigate} />;
       case 'add_client': return (
@@ -120,10 +120,10 @@ const App: React.FC = () => {
       }} prefilledClientId={prefilledClientId} />;
       case 'reports': return <Reports />;
       case 'history': return <History />;
-      case 'pending_payments': return <PendingPayments />;
+      case 'pending_payments': return <PendingPayments onViewClient={handleViewClient} />;
       case 'all_sales': return <AllSales onEditSale={handleEditSale} showToast={showToast} />;
       case 'all_payments': return <AllPayments />;
-      default: return <DashboardNav setActiveView={handleNavigate} />;
+      default: return <Dashboard onNavigate={handleNavigate} />;
     }
   };
 
@@ -341,36 +341,62 @@ const HeaderSummary: FC<{ setActiveView: (view: View) => void }> = ({ setActiveV
     );
 };
 
-// --- DASHBOARD NAV ---
-const DashboardNav: FC<{ setActiveView: (view: View) => void; }> = ({ setActiveView }) => {
+// --- NEW DASHBOARD ---
+const Dashboard: FC<{ onNavigate: (view: View, clientId?: string) => void; }> = ({ onNavigate }) => {
     const navItems = [
         { id: 'add_client', icon: UserPlusIcon, title: 'Cadastrar Cliente', description: 'Adicionar novos clientes' },
         { id: 'stock', icon: ArchiveIcon, title: 'Estoque', description: 'Gerenciar produtos' },
-        { id: 'add_sale', icon: ShoppingCartIcon, title: 'Nova Venda', description: 'Registrar uma venda' },
-        { id: 'add_payment', icon: CreditCardIcon, title: 'Receber Pagamento', description: 'Registrar pagamentos' },
-        { id: 'clients', icon: AddressBookIcon, title: 'Gerenciar Clientes', description: 'Visualizar e editar' },
-        { id: 'reports', icon: BarChartIcon, title: 'Relatórios', description: 'Análises e estatísticas' },
-        { id: 'history', icon: HistoryIcon, title: 'Histórico', description: 'Todas as transações' },
+        { id: 'clients', icon: AddressBookIcon, title: 'Ver Todos Clientes', description: 'Visualizar e editar' },
+        { id: 'reports', icon: BarChartIcon, title: 'Análise de Vendas', description: 'Ver estatísticas' },
+        { id: 'history', icon: HistoryIcon, title: 'Histórico Completo', description: 'Todas as transações' },
     ];
-    
+
     return (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {navItems.map(item => (
-                <Card 
-                    key={item.id} 
-                    onClick={() => setActiveView(item.id as View)} 
-                    className="text-center flex flex-col items-center justify-center space-y-2 !p-4 sm:!p-6"
-                >
-                     <div className="p-3 bg-gradient-to-br from-pink-100 to-rose-100 rounded-full mb-2">
-                        <item.icon className="w-8 h-8 sm:w-10 sm:h-10 text-pink-500" />
-                     </div>
-                     <h2 className="text-sm sm:text-base font-bold text-gray-700">{item.title}</h2>
-                     <p className="text-xs sm:text-sm text-gray-500">{item.description}</p>
-                </Card>
-            ))}
+        <div className="space-y-8">
+            {/* Quick Actions */}
+            <Card>
+                <h2 className="text-xl font-bold text-rose-800 mb-1">Ações Rápidas</h2>
+                <p className="text-gray-500 text-sm mb-4">Comece por aqui para as tarefas mais comuns.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <button onClick={() => onNavigate('add_sale')} className="p-6 bg-gradient-to-br from-pink-50 to-rose-100 border-2 border-rose-200 rounded-xl flex items-center space-x-4 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+                        <ShoppingCartIcon className="w-10 h-10 text-rose-500" />
+                        <div>
+                            <h3 className="text-lg font-bold text-gray-800 text-left">Nova Venda</h3>
+                            <p className="text-gray-600 text-left">Registrar uma nova venda para uma cliente.</p>
+                        </div>
+                    </button>
+                    <button onClick={() => onNavigate('add_payment')} className="p-6 bg-gradient-to-br from-emerald-50 to-green-100 border-2 border-green-200 rounded-xl flex items-center space-x-4 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+                        <CreditCardIcon className="w-10 h-10 text-emerald-500" />
+                        <div>
+                            <h3 className="text-lg font-bold text-gray-800 text-left">Receber Pagamento</h3>
+                            <p className="text-gray-600 text-left">Registrar um pagamento recebido.</p>
+                        </div>
+                    </button>
+                </div>
+            </Card>
+
+            {/* Other Options */}
+            <div>
+                 <h2 className="text-xl font-bold text-rose-800 mb-4 ml-2">Outras Opções</h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    {navItems.map(item => (
+                        <Card 
+                            key={item.id} 
+                            onClick={() => onNavigate(item.id as View)} 
+                            className="text-center flex flex-col items-center justify-center space-y-2 !p-4 sm:!p-6"
+                        >
+                             <div className="p-3 bg-gradient-to-br from-pink-100 to-rose-100 rounded-full mb-2">
+                                <item.icon className="w-8 h-8 text-pink-500" />
+                             </div>
+                             <h2 className="text-sm sm:text-base font-bold text-gray-700 text-center">{item.title}</h2>
+                        </Card>
+                    ))}
+                </div>
+            </div>
         </div>
     );
 };
+
 
 // --- ALL SALES ---
 const AllSales: FC<{ onEditSale: (sale: Sale) => void; showToast: (msg: string) => void; }> = ({ onEditSale, showToast }) => {
@@ -444,7 +470,7 @@ const AllPayments: FC = () => {
 }
 
 // --- PENDING PAYMENTS ---
-const PendingPayments: FC = () => {
+const PendingPayments: FC<{onViewClient: (clientId: string) => void;}> = ({onViewClient}) => {
     const { clients, clientBalances } = useData();
     const pendingClients = useMemo(() => {
         return clients.map(c => ({
@@ -468,7 +494,7 @@ const PendingPayments: FC = () => {
                         </thead>
                         <tbody>
                             {pendingClients.map(client => (
-                                <tr key={client.id} className="border-b border-pink-100/50 hover:bg-pink-50/50">
+                                <tr key={client.id} onClick={() => onViewClient(client.id)} className="border-b border-pink-100/50 hover:bg-pink-50/50 cursor-pointer">
                                     <td className="p-3 font-medium">{client.fullName}</td>
                                     <td className="p-3">{client.phone}</td>
                                     <td className="p-3 text-right font-bold text-rose-600">{client.balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
@@ -823,20 +849,29 @@ const SaleForm: FC<{ editingSale?: Sale | null; onSaleSuccess: (sale: Sale, isEd
 
 // --- PAYMENT FORM ---
 const PaymentForm: FC<{ onPaymentSuccess: () => void; prefilledClientId: string | null; }> = ({ onPaymentSuccess, prefilledClientId }) => {
-    const { clients, addPayment } = useData();
+    const { clients, addPayment, clientBalances } = useData();
     const [paymentData, setPaymentData] = useState({
         clientId: prefilledClientId || '',
         paymentDate: new Date().toISOString().split('T')[0],
         amount: '0',
         observation: ''
     });
+    const [selectedClientBalance, setSelectedClientBalance] = useState<number | null>(null);
 
     useEffect(() => {
         if(prefilledClientId) {
             setPaymentData(prev => ({ ...prev, clientId: prefilledClientId }));
         }
     }, [prefilledClientId]);
-
+    
+    useEffect(() => {
+        if (paymentData.clientId) {
+            const balance = clientBalances.get(paymentData.clientId);
+            setSelectedClientBalance(balance || 0);
+        } else {
+            setSelectedClientBalance(null);
+        }
+    }, [paymentData.clientId, clientBalances]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -862,11 +897,23 @@ const PaymentForm: FC<{ onPaymentSuccess: () => void; prefilledClientId: string 
             <h1 className="text-2xl font-bold text-rose-800 mb-6">Receber Pagamento 💸</h1>
             <form onSubmit={handleSubmit} className="space-y-4 max-w-lg mx-auto">
                 <Select label="Cliente" name="clientId" value={paymentData.clientId} onChange={handleChange} required>
-                    <option value="">Selecione um cliente</option>
+                    <option value="">Selecione uma cliente</option>
                     {clients.map(c => <option key={c.id} value={c.id}>{c.fullName}</option>)}
                 </Select>
+                {selectedClientBalance !== null && (
+                    <div className={`p-3 rounded-lg text-center ${selectedClientBalance > 0 ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+                        Saldo devedor atual: <span className="font-bold">{selectedClientBalance.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}</span>
+                    </div>
+                )}
                  <Input label="Data do Pagamento" name="paymentDate" type="date" value={paymentData.paymentDate} onChange={handleChange} required />
-                 <Input label="Valor Recebido (R$)" name="amount" type="number" min="0.01" step="0.01" value={paymentData.amount} onChange={handleChange} required />
+                 <div>
+                    <Input label="Valor Recebido (R$)" name="amount" type="number" min="0.01" step="0.01" value={paymentData.amount} onChange={handleChange} required />
+                     {selectedClientBalance !== null && selectedClientBalance > 0 && (
+                        <button type="button" onClick={() => setPaymentData(prev => ({...prev, amount: String(selectedClientBalance)}))} className="text-sm text-pink-600 hover:underline mt-1">
+                            Preencher com valor total
+                        </button>
+                    )}
+                 </div>
                  <TextArea label="Observação" name="observation" value={paymentData.observation} onChange={handleChange} />
                  <div className="flex justify-end pt-4">
                     <Button type="submit">Registrar Pagamento</Button>
@@ -887,7 +934,8 @@ const Reports: FC = () => {
             return acc;
         }, {} as Record<string, number>);
 
-        return Object.entries(clientTotals)
+        // FIX: Explicitly cast the result of Object.entries to fix type inference issues in the toolchain.
+        return (Object.entries(clientTotals) as [string, number][])
             .sort((a, b) => b[1] - a[1])
             .slice(0, 5)
             .map(([clientId, total]) => ({
@@ -907,7 +955,8 @@ const Reports: FC = () => {
             return acc;
         }, {} as Record<string, { quantity: number; total: number }>);
 
-        return Object.entries(productTotals)
+        // FIX: Explicitly cast the result of Object.entries to fix type inference issues with 'unknown' values.
+        return (Object.entries(productTotals) as [string, { quantity: number; total: number }][])
             .sort((a, b) => b[1].quantity - a[1].quantity)
             .slice(0, 5)
             .map(([productName, data]) => ({ productName, ...data }));
