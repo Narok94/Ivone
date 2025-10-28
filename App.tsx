@@ -1,6 +1,9 @@
 
 
+
+
 import React, { useState, useMemo, FC, useEffect, ReactNode, useRef } from 'react';
+import { GoogleGenAI, Chat } from "@google/genai";
 import { useData } from './context/DataContext';
 import { Client, StockItem, Sale, Payment } from './types';
 import { Card, Button, Input, Modal, TextArea, Select } from './components/common';
@@ -22,6 +25,10 @@ const EditIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://
 const TrashIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>);
 const SparklesIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 3a6 6 0 0 0 9 9a2 2 0 1 1-4 0a2 2 0 0 0-4-4a2 2 0 1 1 0-4a6 6 0 0 0-9-9a2 2 0 1 1 4 0a2 2 0 0 0 4 4a2 2 0 1 1 0 4Z"/></svg>);
 const ShieldIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>);
+const BotIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>);
+const MicrophoneIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>);
+const SendIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>);
+
 
 // --- TOAST NOTIFICATION ---
 const Toast: FC<{ message: string; onClose: () => void }> = ({ message, onClose }) => {
@@ -176,8 +183,282 @@ const App: React.FC = () => {
         <ShieldIcon className="w-6 h-6" />
       </button>
 
+      <AIAssistant showToast={showToast} />
     </div>
   );
+};
+
+// --- AI ASSISTANT ---
+const AIAssistant: FC<{ showToast: (message: string) => void }> = ({ showToast }) => {
+    const { addClient, addSale, addPayment, clients } = useData();
+    const [isOpen, setIsOpen] = useState(false);
+    const [messages, setMessages] = useState<{ sender: 'user' | 'ai'; text: string | ReactNode }[]>([]);
+    const [userInput, setUserInput] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [isListening, setIsListening] = useState(false);
+    const [position, setPosition] = useState({ x: window.innerWidth - 80, y: window.innerHeight - 80 });
+    const [isDragging, setIsDragging] = useState(false);
+    const wasDraggedRef = useRef(false);
+    const dragStartPos = useRef({ x: 0, y: 0 });
+    const chatRef = useRef<Chat | null>(null);
+    const recognitionRef = useRef<any>(null);
+    const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages]);
+
+    useEffect(() => {
+        if (!process.env.API_KEY) {
+            console.error("API_KEY not found.");
+            return;
+        }
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const clientNames = clients.map(c => c.fullName).join(', ') || 'Nenhum';
+        const systemInstruction = `Você é 'IV.IA', uma assistente virtual para o app 'Sistema de Vendas Ivone'. Seu objetivo é ajudar a usuária a cadastrar clientes, vendas e pagamentos através de uma conversa. Clientes existentes: ${clientNames}. Ações disponíveis: 1. 'add_client': Campos obrigatórios: fullName, address, phone, cpf. Campos opcionais: email, observation. 2. 'add_sale': Campos obrigatórios: clientName (deve ser um dos clientes existentes da lista), productName, quantity, unitPrice. Campos opcionais: observation. 3. 'add_payment': Campos obrigatórios: clientName (deve ser um dos clientes existentes da lista), amount. Campos opcionais: observation. COMO PROCEDER: Seja amigável e use emojis 💖✨. Peça UMA informação de cada vez. Quando tiver TODOS os campos obrigatórios para uma ação, responda APENAS com um JSON no seguinte formato: {"action": "action_name", "data": { ...dados... }}. NÃO adicione nenhum texto antes ou depois do JSON. Se a usuária pedir para cancelar, responda "Ok, cancelando a operação. ✨" e esqueça os dados coletados. Se a usuária conversar, responda de forma natural. Se ela te cumprimentar, apresente-se e diga o que pode fazer.`;
+        
+        chatRef.current = ai.chats.create({
+            model: 'gemini-2.5-flash',
+            config: { systemInstruction },
+        });
+
+        setMessages([{ sender: 'ai', text: 'Olá! Eu sou a IV.IA, sua assistente virtual. 💖 Como posso te ajudar hoje? (Ex: "cadastrar cliente")' }]);
+    }, [clients]);
+
+     useEffect(() => {
+        // FIX: Cast window to `any` to access non-standard SpeechRecognition APIs
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            const recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.lang = 'pt-BR';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+            recognition.onstart = () => setIsListening(true);
+            recognition.onend = () => setIsListening(false);
+            recognition.onerror = (event: any) => {
+                console.error('Speech recognition error', event.error);
+                setIsListening(false);
+            };
+            recognition.onresult = (event: any) => {
+                const transcript = event.results[0][0].transcript;
+                setUserInput(transcript);
+                sendMessageToAI(transcript);
+            };
+            recognitionRef.current = recognition;
+        }
+    }, []);
+
+    const handleAction = (action: string, data: any) => {
+        let successMessage = '';
+        try {
+            switch (action) {
+                case 'add_client':
+                    addClient(data);
+                    successMessage = `Cliente ${data.fullName} cadastrado com sucesso! ✅`;
+                    break;
+                case 'add_sale': {
+                    const client = clients.find(c => c.fullName.toLowerCase() === data.clientName.toLowerCase());
+                    if (!client) throw new Error(`Cliente ${data.clientName} não encontrada.`);
+                    addSale({
+                        clientId: client.id,
+                        saleDate: new Date().toISOString().split('T')[0],
+                        productCode: '',
+                        productName: data.productName,
+                        stockItemId: null,
+                        quantity: parseFloat(data.quantity),
+                        unitPrice: parseFloat(data.unitPrice),
+                        observation: data.observation || '',
+                    });
+                    successMessage = `Venda para ${client.fullName} registrada com sucesso! 🛒`;
+                    break;
+                }
+                case 'add_payment': {
+                    const client = clients.find(c => c.fullName.toLowerCase() === data.clientName.toLowerCase());
+                    if (!client) throw new Error(`Cliente ${data.clientName} não encontrada.`);
+                    addPayment({
+                        clientId: client.id,
+                        paymentDate: new Date().toISOString().split('T')[0],
+                        amount: parseFloat(data.amount),
+                        observation: data.observation || '',
+                    });
+                     successMessage = `Pagamento de ${client.fullName} registrado com sucesso! 💸`;
+                    break;
+                }
+                default:
+                    throw new Error('Ação desconhecida.');
+            }
+            showToast(successMessage);
+            setMessages(prev => [...prev, { sender: 'ai', text: successMessage }]);
+
+        } catch (error: any) {
+            const errorMessage = `Desculpe, ocorreu um erro: ${error.message} 😥`;
+            setMessages(prev => [...prev, { sender: 'ai', text: errorMessage }]);
+        }
+    };
+    
+    const sendMessageToAI = async (message: string) => {
+        if (!message.trim() || !chatRef.current) return;
+        
+        const newMessages = [...messages, { sender: 'user' as const, text: message }];
+        setMessages(newMessages);
+        setUserInput('');
+        setIsLoading(true);
+
+        try {
+            const result = await chatRef.current.sendMessage({ message });
+            const responseText = result.text.trim();
+            
+            if (responseText.startsWith('{') && responseText.endsWith('}')) {
+                try {
+                    const jsonResponse = JSON.parse(responseText);
+                    if (jsonResponse.action && jsonResponse.data) {
+                        handleAction(jsonResponse.action, jsonResponse.data);
+                    }
+                } catch (e) {
+                    setMessages(prev => [...prev, { sender: 'ai', text: responseText }]);
+                }
+            } else {
+                 setMessages(prev => [...prev, { sender: 'ai', text: responseText }]);
+            }
+
+        } catch (error) {
+            console.error(error);
+            setMessages(prev => [...prev, { sender: 'ai', text: 'Desculpe, estou com um problema para me conectar. Tente novamente. 😥' }]);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleFormSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        sendMessageToAI(userInput);
+    };
+    
+    const handleListen = () => {
+        if (!recognitionRef.current) {
+            alert('Desculpe, seu navegador não suporta comandos de voz.');
+            return;
+        }
+        if (isListening) {
+            recognitionRef.current.stop();
+        } else {
+            recognitionRef.current.start();
+        }
+    };
+
+    // Drag handlers
+    const handleMouseDown = (e: React.MouseEvent) => {
+        wasDraggedRef.current = false;
+        setIsDragging(true);
+        dragStartPos.current = {
+            x: e.clientX - position.x,
+            y: e.clientY - position.y
+        };
+        e.preventDefault();
+    };
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (!isDragging) return;
+        wasDraggedRef.current = true;
+        const newX = e.clientX - dragStartPos.current.x;
+        const newY = e.clientY - dragStartPos.current.y;
+        setPosition({ x: newX, y: newY });
+    };
+
+    const handleMouseUp = () => {
+        setIsDragging(false);
+    };
+
+    useEffect(() => {
+        if (isDragging) {
+            const moveHandler = (e: MouseEvent) => handleMouseMove(e as any);
+            const upHandler = () => handleMouseUp();
+            window.addEventListener('mousemove', moveHandler);
+            window.addEventListener('mouseup', upHandler);
+            return () => {
+                window.removeEventListener('mousemove', moveHandler);
+                window.removeEventListener('mouseup', upHandler);
+            };
+        }
+    }, [isDragging]);
+    
+    return (
+        <>
+            {/* Orb */}
+            <div
+                style={{ left: `${position.x}px`, top: `${position.y}px` }}
+                className={`fixed z-30 w-16 h-16 rounded-full cursor-pointer transition-all duration-300 flex items-center justify-center shadow-lg hover:shadow-2xl ${isDragging ? 'scale-110' : 'hover:scale-110'}`}
+                onMouseDown={handleMouseDown}
+                onClick={() => !wasDraggedRef.current && setIsOpen(true)}
+            >
+                <div className="absolute inset-0 bg-gradient-to-br from-pink-400 to-rose-500 rounded-full animate-pulse"></div>
+                <div className="absolute inset-1 bg-white/30 backdrop-blur-sm rounded-full"></div>
+                <BotIcon className="w-8 h-8 text-white relative" />
+            </div>
+
+            {/* Window */}
+            {isOpen && (
+                 <div className="fixed inset-0 bg-black/30 z-40 flex justify-center items-center p-4">
+                     <div className="w-full max-w-lg h-[80vh] max-h-[700px] bg-white/50 backdrop-blur-xl rounded-2xl shadow-2xl border border-pink-200/50 flex flex-col animate-slide-in">
+                         {/* Header */}
+                         <div className="p-4 border-b border-pink-200/50 flex justify-between items-center">
+                             <div className="flex items-center gap-3">
+                                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center">
+                                     <BotIcon className="w-5 h-5 text-white"/>
+                                 </div>
+                                 <h2 className="text-xl font-bold text-rose-800">IV.IA Assistant</h2>
+                             </div>
+                             <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-800 text-2xl font-bold">&times;</button>
+                         </div>
+                         {/* Messages */}
+                         <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+                            {messages.map((msg, index) => (
+                                <div key={index} className={`flex items-end gap-2 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
+                                    {msg.sender === 'ai' && <div className="w-6 h-6 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex-shrink-0"></div>}
+                                    <div className={`max-w-[80%] p-3 rounded-2xl ${msg.sender === 'user' ? 'bg-pink-500 text-white rounded-br-none' : 'bg-white/80 text-gray-700 rounded-bl-none'}`}>
+                                        <p className="text-sm">{msg.text}</p>
+                                    </div>
+                                </div>
+                            ))}
+                            {isLoading && (
+                                <div className="flex items-end gap-2">
+                                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex-shrink-0"></div>
+                                    <div className="max-w-[80%] p-3 rounded-2xl bg-white/80 text-gray-700 rounded-bl-none">
+                                        <div className="flex gap-1.5 items-center">
+                                            <span className="w-2 h-2 bg-pink-400 rounded-full animate-bounce delay-0"></span>
+                                            <span className="w-2 h-2 bg-pink-400 rounded-full animate-bounce delay-150"></span>
+                                            <span className="w-2 h-2 bg-pink-400 rounded-full animate-bounce delay-300"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                             <div ref={messagesEndRef} />
+                         </div>
+                         {/* Input */}
+                         <div className="p-4 border-t border-pink-200/50">
+                             <form onSubmit={handleFormSubmit} className="flex items-center gap-2">
+                                <button type="button" onClick={handleListen} className={`p-2 rounded-full transition-colors ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-pink-100 text-pink-600 hover:bg-pink-200'}`}>
+                                    <MicrophoneIcon className="w-6 h-6"/>
+                                </button>
+                                 <input 
+                                    type="text"
+                                    value={userInput}
+                                    onChange={(e) => setUserInput(e.target.value)}
+                                    placeholder={isListening ? 'Ouvindo...' : 'Digite sua mensagem...'}
+                                    className="flex-1 px-4 py-2 bg-white/70 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-pink-400"
+                                    disabled={isLoading}
+                                 />
+                                <button type="submit" className="p-2 rounded-full bg-pink-500 text-white hover:bg-rose-500 disabled:bg-pink-300 transition-colors" disabled={isLoading || !userInput}>
+                                    <SendIcon className="w-6 h-6"/>
+                                </button>
+                             </form>
+                         </div>
+                     </div>
+                 </div>
+            )}
+        </>
+    );
 };
 
 // --- BACKUP RESTORE MODAL ---
