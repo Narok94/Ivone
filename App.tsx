@@ -514,10 +514,10 @@ const ClientForm: FC<{ client?: Client | null; onDone: () => void }> = ({ client
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <Input label="Nome Completo" id="fullName" name="fullName" value={formData.fullName} onChange={handleChange} required />
-            <Input label="Endereço Completo" id="address" name="address" value={formData.address} onChange={handleChange} />
-            <Input label="Telefone" id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange} />
+            <Input label="Endereço Completo" id="address" name="address" value={formData.address} onChange={handleChange} required />
+            <Input label="Telefone" id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange} required />
             <Input label="E-mail" id="email" name="email" type="email" value={formData.email} onChange={handleChange} />
-            <Input label="CPF" id="cpf" name="cpf" value={formData.cpf} onChange={handleChange} />
+            <Input label="CPF" id="cpf" name="cpf" value={formData.cpf} onChange={handleChange} required />
             <TextArea label="Observação" id="observation" name="observation" value={formData.observation} onChange={handleChange} />
             <div className="flex justify-end pt-4">
                 <Button type="submit">{client ? 'Atualizar Cliente' : 'Cadastrar Cliente'}</Button>
@@ -653,7 +653,7 @@ const StockManager: FC = () => {
                 <form onSubmit={handleAddItem} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
                     <Input label="Nome do Produto" name="name" value={newItem.name} onChange={handleNewItemChange} required />
                     <Input label="Tamanho" name="size" value={newItem.size} onChange={handleNewItemChange} />
-                    <Input label="Código" name="code" value={newItem.code} onChange={handleNewItemChange} required />
+                    <Input label="Código" name="code" type="number" value={newItem.code} onChange={handleNewItemChange} required />
                     <Input label="Quantidade" name="quantity" type="number" min="0" value={newItem.quantity} onChange={handleNewItemChange} />
                     <Button type="submit" className="md:col-start-5">Adicionar</Button>
                 </form>
@@ -801,7 +801,7 @@ const SaleForm: FC<{ editingSale?: Sale | null; onSaleSuccess: (sale: Sale, isEd
                     <Input label="Data da Venda" name="saleDate" type="date" value={saleData.saleDate} onChange={handleChange} required />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input label="Código do Produto (opcional)" name="productCode" placeholder="Puxa do estoque" value={saleData.productCode} onChange={handleChange} />
+                    <Input label="Código do Produto (opcional)" name="productCode" type="number" placeholder="Puxa do estoque" value={saleData.productCode} onChange={handleChange} />
                     <Input label="Nome do Produto" name="productName" value={saleData.productName} onChange={handleChange} required />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -881,12 +881,11 @@ const Reports: FC = () => {
     const { sales, clients, getClientById } = useData();
 
     const topClients = useMemo(() => {
-        // FIX: Use a generic type argument for `reduce` to correctly type the accumulator.
-        // This ensures `clientTotals` is correctly typed, resolving errors in subsequent operations.
-        const clientTotals = sales.reduce<Record<string, number>>((acc, sale) => {
+        // Correctly type the accumulator for the reduce function to resolve type errors.
+        const clientTotals = sales.reduce((acc: Record<string, number>, sale) => {
             acc[sale.clientId] = (acc[sale.clientId] || 0) + sale.total;
             return acc;
-        }, {});
+        }, {} as Record<string, number>);
 
         return Object.entries(clientTotals)
             .sort((a, b) => b[1] - a[1])
@@ -898,16 +897,15 @@ const Reports: FC = () => {
     }, [sales, getClientById]);
     
     const topProducts = useMemo(() => {
-        // FIX: Use a generic type argument for `reduce` to correctly type the accumulator.
-        // This ensures `productTotals` is correctly typed, allowing access to properties like 'quantity'.
-        const productTotals = sales.reduce<Record<string, { quantity: number; total: number }>>((acc, sale) => {
+        // Correctly type the accumulator for the reduce function to resolve type errors.
+        const productTotals = sales.reduce((acc: Record<string, { quantity: number; total: number }>, sale) => {
             if (!acc[sale.productName]) {
                  acc[sale.productName] = { quantity: 0, total: 0 };
             }
             acc[sale.productName].quantity += sale.quantity;
             acc[sale.productName].total += sale.total;
             return acc;
-        }, {});
+        }, {} as Record<string, { quantity: number; total: number }>);
 
         return Object.entries(productTotals)
             .sort((a, b) => b[1].quantity - a[1].quantity)
