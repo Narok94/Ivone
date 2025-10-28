@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, FC, useEffect } from 'react';
+import React, { useState, useMemo, FC, useEffect, ReactNode } from 'react';
 import { useData } from './context/DataContext';
 import { Client, StockItem, Sale, Payment } from './types';
 import { Card, Button, Input, Modal, TextArea, Select } from './components/common';
@@ -37,20 +37,69 @@ const Toast: FC<{ message: string; onClose: () => void }> = ({ message, onClose 
   );
 };
 
-type View = 'dashboard' | 'clients' | 'add_client' | 'add_sale' | 'stock' | 'add_payment' | 'reports' | 'history' | 'pending_payments' | 'all_sales' | 'all_payments';
+// --- EMPTY STATE ---
+const EmptyState: FC<{ icon: FC<{className?: string}>; title: string; message: string; actionButton?: ReactNode }> = ({ icon: Icon, title, message, actionButton }) => (
+    <div className="text-center py-12 px-6 bg-pink-50/50 rounded-2xl border-2 border-dashed border-pink-200">
+        <div className="p-4 bg-gradient-to-br from-pink-100 to-rose-100 rounded-full inline-block mb-4">
+            <Icon className="w-12 h-12 text-pink-500" />
+        </div>
+        <h3 className="text-xl font-bold text-gray-700 mb-2">{title}</h3>
+        <p className="text-gray-500 mb-6 max-w-sm mx-auto">{message}</p>
+        {actionButton}
+    </div>
+);
+
+type View = 'dashboard' | 'clients' | 'add_client' | 'add_sale' | 'stock' | 'add_payment' | 'reports' | 'history' | 'pending_payments' | 'all_sales' | 'all_payments' | 'client_detail';
 
 const App: React.FC = () => {
   const [activeView, setActiveView] = useState<View>('dashboard');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [editingSale, setEditingSale] = useState<Sale | null>(null);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [paymentSuggestion, setPaymentSuggestion] = useState<Sale | null>(null);
+  
+  // State for pre-filling forms
+  const [prefilledClientId, setPrefilledClientId] = useState<string | null>(null);
 
   const showToast = (message: string) => {
       setToastMessage(message);
+  };
+  
+  const handleEditSale = (sale: Sale) => {
+    setEditingSale(sale);
+    setActiveView('add_sale');
+  };
+
+  const handleViewClient = (clientId: string) => {
+    setSelectedClientId(clientId);
+    setActiveView('client_detail');
+  };
+
+  const handleSaleSuccess = (sale: Sale, isEditing: boolean) => {
+      showToast(isEditing ? 'Venda atualizada com sucesso!' : 'Venda cadastrada com sucesso!');
+      setEditingSale(null);
+      if (!isEditing) {
+          setPaymentSuggestion(sale);
+      } else {
+          setActiveView('dashboard');
+      }
+  };
+  
+  const handleNavigate = (view: View, clientId?: string) => {
+      setPrefilledClientId(clientId || null);
+      setActiveView(view);
+  };
+  
+  const handleClosePaymentSuggestion = () => {
+      setPaymentSuggestion(null);
+      setActiveView('dashboard');
   };
 
   const renderView = () => {
     switch (activeView) {
       case 'dashboard': return <DashboardNav setActiveView={setActiveView} />;
-      case 'clients': return <ManageClients setActiveView={setActiveView} />;
+      case 'clients': return <ManageClients setActiveView={setActiveView} onViewClient={handleViewClient} showToast={showToast} />;
+      case 'client_detail': return <ClientDetail clientId={selectedClientId!} onNavigate={handleNavigate} />;
       case 'add_client': return (
         <Card>
             <h1 className="text-2xl font-bold text-rose-800 mb-6">Adicionar Nova Cliente 📝</h1>
@@ -60,19 +109,16 @@ const App: React.FC = () => {
             }} />
         </Card>
       );
-      case 'add_sale': return <SaleForm onSaleSuccess={() => {
-          setActiveView('dashboard');
-          showToast('Venda cadastrada com sucesso!');
-      }} />;
+      case 'add_sale': return <SaleForm editingSale={editingSale} onSaleSuccess={handleSaleSuccess} prefilledClientId={prefilledClientId} />;
       case 'stock': return <StockManager />;
       case 'add_payment': return <PaymentForm onPaymentSuccess={() => {
           setActiveView('dashboard');
           showToast('Pagamento registrado com sucesso!');
-      }} />;
+      }} prefilledClientId={prefilledClientId} />;
       case 'reports': return <Reports />;
       case 'history': return <History />;
       case 'pending_payments': return <PendingPayments />;
-      case 'all_sales': return <AllSales />;
+      case 'all_sales': return <AllSales onEditSale={handleEditSale} showToast={showToast} />;
       case 'all_payments': return <AllPayments />;
       default: return <DashboardNav setActiveView={setActiveView} />;
     }
@@ -81,29 +127,92 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-pink-50 text-gray-800">
       {toastMessage && <Toast message={toastMessage} onClose={() => setToastMessage(null)} />}
-      <header className="bg-white/70 backdrop-blur-lg p-4 shadow-md grid grid-cols-3 items-center sticky top-0 z-10">
-        <div className="justify-self-start">
-             {activeView !== 'dashboard' && (
-                <Button variant="secondary" onClick={() => setActiveView('dashboard')}>
-                    <ArrowLeftIcon className="w-5 h-5 mr-2 inline-block"/>
-                    Voltar
-                </Button>
-            )}
-        </div>
-        <div className="justify-self-center text-center">
-             <h1 className="text-xl md:text-2xl font-extrabold tracking-tight bg-gradient-to-r from-pink-500 to-rose-500 text-transparent bg-clip-text">Sistema de vendas Ivone 💖✨</h1>
-        </div>
-        <div></div> {/* Empty div for grid structure */}
+      {paymentSuggestion && <PaymentSuggestionModal sale={paymentSuggestion} onClose={handleClosePaymentSuggestion} showToast={showToast}/>}
+
+      <header className="bg-white/70 backdrop-blur-lg p-4 shadow-md flex items-center justify-center sticky top-0 z-10">
+         <h1 className="text-lg sm:text-xl md:text-2xl font-extrabold tracking-tight bg-gradient-to-r from-pink-500 to-rose-500 text-transparent bg-clip-text whitespace-nowrap">Sistema de vendas Ivone 💖✨</h1>
       </header>
       
       <HeaderSummary setActiveView={setActiveView} />
+      
+       {activeView !== 'dashboard' && (
+        <div className="px-4 md:px-10 pt-6">
+            <Button variant="secondary" onClick={() => {
+                setActiveView('dashboard');
+                setEditingSale(null);
+                setSelectedClientId(null);
+                setPrefilledClientId(null);
+            }}>
+                <ArrowLeftIcon className="w-5 h-5 mr-2 inline-block"/>
+                Voltar
+            </Button>
+        </div>
+      )}
 
-      <main className="p-6 md:p-10">
+      <main className="p-4 md:p-10">
         {renderView()}
       </main>
     </div>
   );
 };
+
+// --- PAYMENT SUGGESTION MODAL ---
+const PaymentSuggestionModal: FC<{sale: Sale; onClose: () => void; showToast: (message: string) => void}> = ({ sale, onClose, showToast }) => {
+    const { addPayment } = useData();
+    const [partialAmount, setPartialAmount] = useState('');
+    const [showPartialInput, setShowPartialInput] = useState(false);
+
+    const handleRegisterPayment = (amount: number) => {
+        addPayment({
+            clientId: sale.clientId,
+            paymentDate: new Date().toISOString().split('T')[0],
+            amount: amount,
+            observation: `Referente à venda #${sale.id.substring(0,6)}`,
+        });
+        showToast(`Pagamento de ${amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} registrado!`);
+        onClose();
+    };
+
+    const handlePartialSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const amount = parseFloat(partialAmount);
+        if (amount > 0) {
+            handleRegisterPayment(amount);
+        }
+    };
+
+    return (
+        <Modal isOpen={true} onClose={onClose} title="Registrar Pagamento?">
+            <div className="text-center">
+                <p className="text-lg mb-6">A venda de <span className="font-bold">{sale.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span> foi registrada. O pagamento já foi recebido?</p>
+                {!showPartialInput ? (
+                    <div className="flex justify-center gap-4">
+                        <Button onClick={() => handleRegisterPayment(sale.total)}>Sim, valor total</Button>
+                        <Button variant="secondary" onClick={() => setShowPartialInput(true)}>Sim, valor parcial</Button>
+                        <Button variant="secondary" onClick={onClose}>Não, registrar depois</Button>
+                    </div>
+                ) : (
+                    <form onSubmit={handlePartialSubmit} className="space-y-4">
+                        <Input 
+                            label="Valor Parcial Recebido (R$)" 
+                            id="partialAmount" 
+                            type="number" 
+                            step="0.01" 
+                            value={partialAmount} 
+                            onChange={(e) => setPartialAmount(e.target.value)} 
+                            autoFocus
+                        />
+                        <div className="flex justify-center gap-4">
+                            <Button type="submit">Registrar Parcial</Button>
+                            <Button variant="secondary" onClick={() => setShowPartialInput(false)}>Cancelar</Button>
+                        </div>
+                    </form>
+                )}
+            </div>
+        </Modal>
+    );
+};
+
 
 // --- HEADER SUMMARY ---
 const HeaderSummary: FC<{ setActiveView: (view: View) => void }> = ({ setActiveView }) => {
@@ -121,16 +230,16 @@ const HeaderSummary: FC<{ setActiveView: (view: View) => void }> = ({ setActiveV
     ];
 
     return (
-        <div className="bg-gradient-to-r from-pink-500 to-rose-400 p-4 shadow-lg">
-             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-7xl mx-auto">
+        <div className="bg-gradient-to-r from-pink-500 to-rose-400 p-2 md:p-4 shadow-lg">
+             <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4 max-w-7xl mx-auto">
                  {summaryItems.map(item => (
-                    <div key={item.title} onClick={() => setActiveView(item.view as View)} className="p-3 flex items-center bg-white/20 backdrop-blur-sm rounded-xl shadow-md cursor-pointer hover:bg-white/30 transform hover:scale-105 transition-all duration-300">
-                        <div className="p-3 rounded-full mr-4 text-pink-500 bg-white/90 shadow-inner">
-                            <item.icon className="w-6 h-6" />
+                    <div key={item.title} onClick={() => setActiveView(item.view as View)} className="p-2 flex items-center bg-white/20 backdrop-blur-sm rounded-xl shadow-md cursor-pointer hover:bg-white/30 transform hover:scale-105 transition-all duration-300">
+                        <div className="p-2 rounded-full mr-3 text-pink-500 bg-white/90 shadow-inner">
+                            <item.icon className="w-5 h-5 md:w-6 md:h-6" />
                         </div>
                         <div>
-                            <p className="text-sm text-rose-100 font-medium">{item.title}</p>
-                            <p className="text-xl font-bold text-white">{item.value}</p>
+                            <p className="text-xs md:text-sm text-rose-100 font-medium">{item.title}</p>
+                            <p className="text-base md:text-xl font-bold text-white">{item.value}</p>
                         </div>
                     </div>
                  ))}
@@ -152,18 +261,18 @@ const DashboardNav: FC<{ setActiveView: (view: View) => void; }> = ({ setActiveV
     ];
     
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {navItems.map(item => (
                 <Card 
                     key={item.id} 
                     onClick={() => setActiveView(item.id as View)} 
-                    className="text-center flex flex-col items-center justify-center space-y-3 !p-8"
+                    className="text-center flex flex-col items-center justify-center space-y-2 !p-4 sm:!p-6"
                 >
-                     <div className="p-4 bg-gradient-to-br from-pink-100 to-rose-100 rounded-full mb-2">
-                        <item.icon className="w-12 h-12 text-pink-500" />
+                     <div className="p-3 bg-gradient-to-br from-pink-100 to-rose-100 rounded-full mb-2">
+                        <item.icon className="w-8 h-8 sm:w-10 sm:h-10 text-pink-500" />
                      </div>
-                     <h2 className="text-lg font-bold text-gray-700">{item.title}</h2>
-                     <p className="text-sm text-gray-500">{item.description}</p>
+                     <h2 className="text-sm sm:text-base font-bold text-gray-700">{item.title}</h2>
+                     <p className="text-xs sm:text-sm text-gray-500">{item.description}</p>
                 </Card>
             ))}
         </div>
@@ -171,8 +280,16 @@ const DashboardNav: FC<{ setActiveView: (view: View) => void; }> = ({ setActiveV
 };
 
 // --- ALL SALES ---
-const AllSales: FC = () => {
-    const { sales, getClientById } = useData();
+const AllSales: FC<{ onEditSale: (sale: Sale) => void; showToast: (msg: string) => void; }> = ({ onEditSale, showToast }) => {
+    const { sales, getClientById, deleteSale } = useData();
+    
+    const handleDelete = (saleId: string) => {
+        if (window.confirm('Tem certeza que deseja excluir esta venda? O estoque será ajustado.')) {
+            deleteSale(saleId);
+            showToast('Venda excluída com sucesso!');
+        }
+    };
+
     const sortedSales = useMemo(() => 
         [...sales].sort((a,b) => new Date(b.saleDate).getTime() - new Date(a.saleDate).getTime()),
     [sales]);
@@ -184,16 +301,22 @@ const AllSales: FC = () => {
                 {sortedSales.length > 0 ? sortedSales.map(sale => {
                      const client = getClientById(sale.clientId);
                      return (
-                        <div key={sale.id} className="p-4 bg-rose-50 border border-rose-100 rounded-lg flex justify-between items-start">
-                            <div>
+                        <div key={sale.id} className="p-4 bg-rose-50 border border-rose-100 rounded-lg flex justify-between items-center">
+                            <div className="flex-grow">
                                 <p className="font-bold text-gray-700">Venda para {client?.fullName || 'Cliente não encontrado'}</p>
                                 <p className="text-sm text-gray-600">{sale.quantity}x {sale.productName}</p>
                                 <p className="text-xs text-gray-500">{new Date(sale.saleDate).toLocaleDateString('pt-BR')}</p>
                             </div>
-                            <p className="font-bold text-rose-600">-{sale.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                            <div className="flex flex-col items-end justify-center ml-4">
+                                <p className="font-bold text-rose-600 whitespace-nowrap">-{sale.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                                <div className="flex gap-3 mt-2">
+                                    <button onClick={() => onEditSale(sale)} className="text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-blue-100 transition-colors" aria-label="Editar venda"><EditIcon/></button>
+                                    <button onClick={() => handleDelete(sale.id)} className="text-red-600 hover:text-red-800 p-1 rounded-full hover:bg-red-100 transition-colors" aria-label="Excluir venda"><TrashIcon/></button>
+                                </div>
+                            </div>
                         </div>
                      )
-                }) : <p className="text-center text-gray-500 py-8">Nenhuma venda registrada ainda.</p>}
+                }) : <EmptyState icon={ShoppingCartIcon} title="Nenhuma venda registrada" message="Quando você registrar uma nova venda, ela aparecerá aqui."/>}
             </div>
         </Card>
     );
@@ -221,7 +344,7 @@ const AllPayments: FC = () => {
                             <p className="font-bold text-emerald-600">+{payment.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
                         </div>
                     )
-                }) : <p className="text-center text-gray-500 py-8">Nenhum pagamento recebido ainda.</p>}
+                }) : <EmptyState icon={WalletIcon} title="Nenhum pagamento recebido" message="Todos os pagamentos registrados pelos clientes aparecerão aqui."/>}
             </div>
         </Card>
     );
@@ -262,7 +385,7 @@ const PendingPayments: FC = () => {
                     </table>
                 </div>
             ) : (
-                <p className="text-center text-gray-500 py-8">Nenhum cliente com pagamentos pendentes. 🎉</p>
+                 <EmptyState icon={SparklesIcon} title="Tudo em dia!" message="Nenhum cliente com pagamentos pendentes no momento. 🎉"/>
             )}
         </Card>
     )
@@ -311,17 +434,10 @@ const ClientForm: FC<{ client?: Client | null; onDone: () => void }> = ({ client
 };
 
 // --- MANAGE CLIENTS ---
-const ManageClients: FC<{ setActiveView: (view: View) => void }> = ({ setActiveView }) => {
+const ManageClients: FC<{ setActiveView: (view: View) => void; onViewClient: (clientId: string) => void; showToast: (msg: string) => void; }> = ({ setActiveView, onViewClient, showToast }) => {
     const { clients, deleteClient } = useData();
     const [filter, setFilter] = useState('');
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingClient, setEditingClient] = useState<Client | null>(null);
-
-    const closeModal = () => {
-        setIsModalOpen(false);
-        setEditingClient(null);
-    };
-
+   
     const filteredClients = useMemo(() => {
         if (!filter) return clients;
         const lowercasedFilter = filter.toLowerCase();
@@ -337,14 +453,11 @@ const ManageClients: FC<{ setActiveView: (view: View) => void }> = ({ setActiveV
         setActiveView('add_client');
     };
 
-    const handleEdit = (client: Client) => {
-        setEditingClient(client);
-        setIsModalOpen(true);
-    };
-
-    const handleDelete = (clientId: string) => {
-        if (window.confirm('Tem certeza que deseja excluir este cliente?')) {
+    const handleDelete = (e: React.MouseEvent, clientId: string) => {
+        e.stopPropagation(); // Prevent row click when deleting
+        if (window.confirm('Tem certeza que deseja excluir este cliente? Todas as vendas e pagamentos associados permanecerão no histórico, mas não será possível associar novas transações a ele.')) {
             deleteClient(clientId);
+            showToast('Cliente excluído com sucesso!');
         }
     };
 
@@ -362,37 +475,41 @@ const ManageClients: FC<{ setActiveView: (view: View) => void }> = ({ setActiveV
                 onChange={(e) => setFilter(e.target.value)}
                 className="mb-6"
             />
-            <div className="overflow-x-auto">
-                 <table className="w-full text-left">
-                    <thead className="bg-pink-100/70 text-pink-800 font-semibold uppercase text-sm">
-                        <tr>
-                            <th className="p-3 rounded-l-lg">Nome</th>
-                            <th className="p-3 hidden md:table-cell">Telefone</th>
-                            <th className="p-3 hidden lg:table-cell">E-mail</th>
-                            <th className="p-3 rounded-r-lg">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredClients.map(client => (
-                            <tr key={client.id} className="border-b border-pink-100/50 hover:bg-pink-50/50">
-                                <td className="p-3 font-medium">{client.fullName}</td>
-                                <td className="p-3 hidden md:table-cell">{client.phone}</td>
-                                <td className="p-3 hidden lg:table-cell">{client.email}</td>
-                                <td className="p-3">
-                                    <div className="flex gap-2">
-                                        <button onClick={() => handleEdit(client)} className="text-blue-600 hover:text-blue-800"><EditIcon/></button>
-                                        <button onClick={() => handleDelete(client.id)} className="text-red-600 hover:text-red-800"><TrashIcon/></button>
-                                    </div>
-                                </td>
+             {filteredClients.length > 0 ? (
+                <div className="overflow-x-auto">
+                     <table className="w-full text-left">
+                        <thead className="bg-pink-100/70 text-pink-800 font-semibold uppercase text-sm">
+                            <tr>
+                                <th className="p-3 rounded-l-lg">Nome</th>
+                                <th className="p-3 hidden md:table-cell">Telefone</th>
+                                <th className="p-3 hidden lg:table-cell">E-mail</th>
+                                <th className="p-3 rounded-r-lg text-right">Ações</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-
-            <Modal isOpen={isModalOpen} onClose={closeModal} title={editingClient ? 'Editar Cliente' : 'Adicionar Nova Cliente'}>
-                <ClientForm client={editingClient} onDone={closeModal} />
-            </Modal>
+                        </thead>
+                        <tbody>
+                            {filteredClients.map(client => (
+                                <tr key={client.id} onClick={() => onViewClient(client.id)} className="border-b border-pink-100/50 hover:bg-pink-50/50 cursor-pointer">
+                                    <td className="p-3 font-medium">{client.fullName}</td>
+                                    <td className="p-3 hidden md:table-cell">{client.phone}</td>
+                                    <td className="p-3 hidden lg:table-cell">{client.email}</td>
+                                    <td className="p-3">
+                                        <div className="flex gap-2 justify-end">
+                                            <button onClick={(e) => handleDelete(e, client.id)} className="text-red-600 hover:text-red-800 p-1"><TrashIcon/></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            ) : (
+                 <EmptyState 
+                    icon={UsersIcon} 
+                    title={clients.length === 0 ? "Nenhum cliente cadastrado" : "Nenhum cliente encontrado"} 
+                    message={clients.length === 0 ? "Vamos começar? Adicione seu primeiro cliente para registrar vendas e pagamentos." : "Tente refinar sua busca ou adicione um novo cliente."} 
+                    actionButton={clients.length === 0 ? <Button onClick={handleAdd}>Cadastrar Primeiro Cliente</Button> : undefined}
+                />
+            )}
         </Card>
     );
 };
@@ -451,52 +568,58 @@ const StockManager: FC = () => {
 
             <Card>
                 <h2 className="text-xl font-bold text-rose-800 mb-4">Estoque Atual 🌸</h2>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                         <thead className="bg-pink-100/70 text-pink-800 font-semibold uppercase text-sm">
-                            <tr>
-                                <th className="p-3 rounded-l-lg">Produto</th>
-                                <th className="p-3 hidden sm:table-cell">Tamanho</th>
-                                <th className="p-3">Código</th>
-                                <th className="p-3">Quantidade</th>
-                                <th className="p-3 rounded-r-lg">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {stockItems.map(item => (
-                                <tr key={item.id} className="border-b border-pink-100/50 hover:bg-pink-50/50">
-                                    <td className="p-3 font-medium">{item.name}</td>
-                                    <td className="p-3 hidden sm:table-cell">{item.size}</td>
-                                    <td className="p-3">{item.code}</td>
-                                    <td className="p-3">
-                                        <div className="flex items-center gap-2">
-                                            <input 
-                                                type="number" 
-                                                value={editingQuantities[item.id] ?? item.quantity}
-                                                onChange={(e) => handleQuantityChange(item.id, e.target.value)}
-                                                onBlur={() => handleUpdateQuantity(item.id)}
-                                                className="w-20 px-2 py-1 border rounded-md focus:ring-pink-400 focus:border-pink-400"
-                                            />
-                                        </div>
-                                    </td>
-                                    <td className="p-3">
-                                       <button onClick={() => deleteStockItem(item.id)} className="text-red-600 hover:text-red-800"><TrashIcon/></button>
-                                    </td>
+                {stockItems.length > 0 ? (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                             <thead className="bg-pink-100/70 text-pink-800 font-semibold uppercase text-sm">
+                                <tr>
+                                    <th className="p-3 rounded-l-lg">Produto</th>
+                                    <th className="p-3 hidden sm:table-cell">Tamanho</th>
+                                    <th className="p-3">Código</th>
+                                    <th className="p-3">Quantidade</th>
+                                    <th className="p-3 rounded-r-lg">Ações</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody>
+                                {stockItems.map(item => (
+                                    <tr key={item.id} className="border-b border-pink-100/50 hover:bg-pink-50/50">
+                                        <td className="p-3 font-medium">{item.name}</td>
+                                        <td className="p-3 hidden sm:table-cell">{item.size}</td>
+                                        <td className="p-3">{item.code}</td>
+                                        <td className="p-3">
+                                            <div className="flex items-center gap-2">
+                                                <input 
+                                                    type="number" 
+                                                    value={editingQuantities[item.id] ?? item.quantity}
+                                                    onChange={(e) => handleQuantityChange(item.id, e.target.value)}
+                                                    onBlur={() => handleUpdateQuantity(item.id)}
+                                                    className="w-20 px-2 py-1 border rounded-md focus:ring-pink-400 focus:border-pink-400"
+                                                />
+                                            </div>
+                                        </td>
+                                        <td className="p-3">
+                                           <button onClick={() => deleteStockItem(item.id)} className="text-red-600 hover:text-red-800"><TrashIcon/></button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                 ) : (
+                    <EmptyState icon={ArchiveIcon} title="Estoque vazio" message="Adicione seu primeiro produto para começar a controlar o estoque." />
+                 )}
             </Card>
         </div>
     );
 };
 
 // --- SALE FORM ---
-const SaleForm: FC<{ onSaleSuccess: () => void }> = ({ onSaleSuccess }) => {
-    const { clients, stockItems, addSale } = useData();
-    const [saleData, setSaleData] = useState({
-        clientId: '',
+const SaleForm: FC<{ editingSale?: Sale | null; onSaleSuccess: (sale: Sale, isEditing: boolean) => void; prefilledClientId: string | null; }> = ({ editingSale, onSaleSuccess, prefilledClientId }) => {
+    const { clients, stockItems, addSale, updateSale } = useData();
+    const isEditing = !!editingSale;
+
+    const initialFormState = {
+        clientId: prefilledClientId || '',
         saleDate: new Date().toISOString().split('T')[0],
         productCode: '',
         productName: '',
@@ -504,7 +627,27 @@ const SaleForm: FC<{ onSaleSuccess: () => void }> = ({ onSaleSuccess }) => {
         quantity: '1',
         unitPrice: '0',
         observation: '',
-    });
+    };
+    
+    const [saleData, setSaleData] = useState(initialFormState);
+
+    useEffect(() => {
+        if (editingSale) {
+            setSaleData({
+                clientId: editingSale.clientId,
+                saleDate: editingSale.saleDate,
+                productCode: editingSale.productCode,
+                productName: editingSale.productName,
+                stockItemId: editingSale.stockItemId,
+                quantity: String(editingSale.quantity),
+                unitPrice: String(editingSale.unitPrice),
+                observation: editingSale.observation,
+            });
+        } else {
+             setSaleData(initialFormState);
+        }
+    }, [editingSale, prefilledClientId]);
+
 
     useEffect(() => {
         if (saleData.productCode) {
@@ -528,35 +671,34 @@ const SaleForm: FC<{ onSaleSuccess: () => void }> = ({ onSaleSuccess }) => {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if(!saleData.clientId || !saleData.productName || Number(saleData.quantity) <= 0 || Number(saleData.unitPrice) <= 0){
+        const quantity = parseFloat(saleData.quantity) || 0;
+        const unitPrice = parseFloat(saleData.unitPrice) || 0;
+
+        if(!saleData.clientId || !saleData.productName || quantity <= 0 || unitPrice < 0){
             alert('Preencha todos os campos obrigatórios (Cliente, Produto, Quantidade e Valor).');
             return;
         }
-        addSale({
+
+        const salePayload = {
             ...saleData,
-            quantity: Number(saleData.quantity),
-            unitPrice: Number(saleData.unitPrice),
-        });
-        
-        // Reset form
-        setSaleData({
-            clientId: '',
-            saleDate: new Date().toISOString().split('T')[0],
-            productCode: '',
-            productName: '',
-            stockItemId: null,
-            quantity: '1',
-            unitPrice: '0',
-            observation: '',
-        });
-        onSaleSuccess();
+            quantity: quantity,
+            unitPrice: unitPrice,
+        };
+
+        if (isEditing && editingSale) {
+            const updatedSale = updateSale({ ...salePayload, id: editingSale.id, total: 0 }); // total is recalculated in context
+            onSaleSuccess(updatedSale, true);
+        } else {
+            const newSale = addSale(salePayload);
+            onSaleSuccess(newSale, false);
+        }
     };
 
-    const total = useMemo(() => Number(saleData.quantity) * Number(saleData.unitPrice), [saleData.quantity, saleData.unitPrice]);
+    const total = useMemo(() => (parseFloat(saleData.quantity) || 0) * (parseFloat(saleData.unitPrice) || 0), [saleData.quantity, saleData.unitPrice]);
 
     return (
         <Card>
-            <h1 className="text-2xl font-bold text-rose-800 mb-6">Cadastrar Venda 🛍️</h1>
+            <h1 className="text-2xl font-bold text-rose-800 mb-6">{isEditing ? 'Editar Venda' : 'Cadastrar Venda'} 🛍️</h1>
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Select label="Cliente" name="clientId" value={saleData.clientId} onChange={handleChange} required>
@@ -579,7 +721,7 @@ const SaleForm: FC<{ onSaleSuccess: () => void }> = ({ onSaleSuccess }) => {
                 </div>
                 <TextArea label="Observação" name="observation" value={saleData.observation} onChange={handleChange} />
                 <div className="flex justify-end pt-4">
-                    <Button type="submit">Registrar Venda</Button>
+                    <Button type="submit">{isEditing ? 'Atualizar Venda' : 'Registrar Venda'}</Button>
                 </div>
             </form>
         </Card>
@@ -587,14 +729,21 @@ const SaleForm: FC<{ onSaleSuccess: () => void }> = ({ onSaleSuccess }) => {
 };
 
 // --- PAYMENT FORM ---
-const PaymentForm: FC<{ onPaymentSuccess: () => void }> = ({ onPaymentSuccess }) => {
+const PaymentForm: FC<{ onPaymentSuccess: () => void; prefilledClientId: string | null; }> = ({ onPaymentSuccess, prefilledClientId }) => {
     const { clients, addPayment } = useData();
     const [paymentData, setPaymentData] = useState({
-        clientId: '',
+        clientId: prefilledClientId || '',
         paymentDate: new Date().toISOString().split('T')[0],
         amount: '0',
         observation: ''
     });
+
+    useEffect(() => {
+        if(prefilledClientId) {
+            setPaymentData(prev => ({ ...prev, clientId: prefilledClientId }));
+        }
+    }, [prefilledClientId]);
+
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -611,13 +760,7 @@ const PaymentForm: FC<{ onPaymentSuccess: () => void }> = ({ onPaymentSuccess })
             ...paymentData,
             amount: Number(paymentData.amount)
         });
-        // Reset form
-        setPaymentData({
-            clientId: '',
-            paymentDate: new Date().toISOString().split('T')[0],
-            amount: '0',
-            observation: ''
-        });
+        
         onPaymentSuccess();
     };
     
@@ -645,8 +788,8 @@ const Reports: FC = () => {
     const { sales, clients, getClientById } = useData();
 
     const topClients = useMemo(() => {
+        // FIX: Correctly type the initial value for `reduce` to ensure proper type inference.
         const clientTotals = sales.reduce((acc, sale) => {
-            // FIX: The left-hand side of the addition could be a string if `acc` was polluted with string values from malformed data, leading to string concatenation instead of addition. Coercing both sides to Number ensures correct arithmetic.
             acc[sale.clientId] = (acc[sale.clientId] || 0) + sale.total;
             return acc;
         }, {} as Record<string, number>);
@@ -661,45 +804,55 @@ const Reports: FC = () => {
     }, [sales, getClientById]);
     
     const topProducts = useMemo(() => {
+        // FIX: Correctly type the initial value for `reduce` to ensure proper type inference.
         const productTotals = sales.reduce((acc, sale) => {
-            // FIX: The left-hand side of the addition could be a string if `acc` was polluted with string values from malformed data, leading to string concatenation instead of addition. Coercing both sides to Number ensures correct arithmetic.
-            acc[sale.productName] = (acc[sale.productName] || 0) + sale.quantity;
+            if (!acc[sale.productName]) {
+                 acc[sale.productName] = { quantity: 0, total: 0 };
+            }
+            acc[sale.productName].quantity += sale.quantity;
+            acc[sale.productName].total += sale.total;
             return acc;
-        }, {} as Record<string, number>);
+        }, {} as Record<string, { quantity: number; total: number }>);
 
         return Object.entries(productTotals)
-            .sort(([, a], [, b]) => b - a)
+            .sort(([, a], [, b]) => b.quantity - a.quantity)
             .slice(0, 5)
-            .map(([productName, quantity]) => ({ productName, quantity }));
+            .map(([productName, data]) => ({ productName, ...data }));
     }, [sales]);
 
     return (
         <div className="space-y-8">
             <h1 className="text-3xl font-bold text-rose-800 text-center">Relatórios 📊</h1>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {sales.length > 0 ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <Card>
+                        <h2 className="text-xl font-bold text-rose-800 mb-4">Top 5 Clientes (por valor de compra) 🏆</h2>
+                        <ul className="space-y-3">
+                            {topClients.map(({ client, total }, index) => (
+                                <li key={client?.id || index} className="flex justify-between items-center p-3 bg-rose-50 rounded-lg border border-rose-100">
+                                    <span className="font-medium text-gray-700">{index + 1}. {client?.fullName || 'Cliente Removido'}</span>
+                                    <span className="font-bold text-rose-600">{total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </Card>
+                    <Card>
+                        <h2 className="text-xl font-bold text-rose-800 mb-4">Top 5 Produtos (por quantidade vendida) ⭐</h2>
+                         <ul className="space-y-3">
+                            {topProducts.map(({ productName, quantity }, index) => (
+                                <li key={productName} className="flex justify-between items-center p-3 bg-rose-50 rounded-lg border border-rose-100">
+                                    <span className="font-medium text-gray-700">{index + 1}. {productName}</span>
+                                    <span className="font-bold text-rose-600">{quantity} unidades</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </Card>
+                </div>
+            ) : (
                 <Card>
-                    <h2 className="text-xl font-bold text-rose-800 mb-4">Top 5 Clientes 🏆</h2>
-                    <ul className="space-y-3">
-                        {topClients.map(({ client, total }, index) => (
-                            <li key={client?.id} className="flex justify-between items-center p-3 bg-rose-50 rounded-lg border border-rose-100">
-                                <span className="font-medium text-gray-700">{index + 1}. {client?.fullName}</span>
-                                <span className="font-bold text-rose-600">{total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
-                            </li>
-                        ))}
-                    </ul>
+                    <EmptyState icon={BarChartIcon} title="Dados insuficientes para relatórios" message="Realize algumas vendas para que os relatórios possam ser gerados." />
                 </Card>
-                <Card>
-                    <h2 className="text-xl font-bold text-rose-800 mb-4">Top 5 Produtos ⭐</h2>
-                     <ul className="space-y-3">
-                        {topProducts.map(({ productName, quantity }, index) => (
-                            <li key={productName} className="flex justify-between items-center p-3 bg-rose-50 rounded-lg border border-rose-100">
-                                <span className="font-medium text-gray-700">{index + 1}. {productName}</span>
-                                <span className="font-bold text-rose-600">{quantity} unidades</span>
-                            </li>
-                        ))}
-                    </ul>
-                </Card>
-            </div>
+            )}
         </div>
     );
 };
@@ -726,34 +879,123 @@ const History: FC = () => {
     return (
         <Card>
             <h1 className="text-2xl font-bold text-rose-800 mb-6">Histórico de Transações 📜</h1>
-            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-                {transactions.map(tx => {
-                    const client = getClientById(tx.clientId);
-                    if (tx.type === 'sale') {
-                        return (
-                            <div key={tx.id} className="p-4 bg-rose-50 border border-rose-100 rounded-lg flex justify-between items-start">
-                                <div>
-                                    <p className="font-bold text-gray-700">Venda para {client?.fullName}</p>
-                                    <p className="text-sm text-gray-600">{tx.quantity}x {tx.productName}</p>
-                                    <p className="text-xs text-gray-500">{new Date(tx.saleDate).toLocaleDateString('pt-BR')}</p>
+            {transactions.length > 0 ? (
+                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                    {transactions.map(tx => {
+                        const client = getClientById(tx.clientId);
+                        if (tx.type === 'sale') {
+                            return (
+                                <div key={`sale-${tx.id}`} className="p-4 bg-rose-50 border border-rose-100 rounded-lg flex justify-between items-start">
+                                    <div>
+                                        <p className="font-bold text-gray-700">Venda para {client?.fullName || 'Cliente Removido'}</p>
+                                        <p className="text-sm text-gray-600">{tx.quantity}x {tx.productName}</p>
+                                        <p className="text-xs text-gray-500">{new Date(tx.saleDate).toLocaleDateString('pt-BR')}</p>
+                                    </div>
+                                    <p className="font-bold text-rose-600">-{tx.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
                                 </div>
-                                <p className="font-bold text-rose-600">-{tx.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
-                            </div>
-                        )
-                    } else {
-                        return (
-                             <div key={tx.id} className="p-4 bg-emerald-50 border border-emerald-100 rounded-lg flex justify-between items-start">
-                                <div>
-                                    <p className="font-bold text-gray-700">Pagamento de {client?.fullName}</p>
-                                    <p className="text-xs text-gray-500">{new Date(tx.paymentDate).toLocaleDateString('pt-BR')}</p>
+                            )
+                        } else {
+                            return (
+                                 <div key={`payment-${tx.id}`} className="p-4 bg-emerald-50 border border-emerald-100 rounded-lg flex justify-between items-start">
+                                    <div>
+                                        <p className="font-bold text-gray-700">Pagamento de {client?.fullName || 'Cliente Removido'}</p>
+                                        <p className="text-xs text-gray-500">{new Date(tx.paymentDate).toLocaleDateString('pt-BR')}</p>
+                                    </div>
+                                    <p className="font-bold text-emerald-600">+{tx.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
                                 </div>
-                                <p className="font-bold text-emerald-600">+{tx.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
-                            </div>
-                        )
-                    }
-                })}
-            </div>
+                            )
+                        }
+                    })}
+                </div>
+            ) : (
+                <EmptyState icon={HistoryIcon} title="Nenhuma transação" message="Todas as suas vendas e pagamentos aparecerão aqui." />
+            )}
         </Card>
+    );
+};
+
+// --- CLIENT DETAIL ---
+const ClientDetail: FC<{ clientId: string; onNavigate: (view: View, clientId?: string) => void; }> = ({ clientId, onNavigate }) => {
+    const { getClientById, sales, payments, clientBalances } = useData();
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+    const client = getClientById(clientId);
+    const balance = clientBalances.get(clientId) || 0;
+
+    type ClientTransaction = (Sale & { type: 'sale' }) | (Payment & { type: 'payment' });
+
+    const transactions = useMemo(() => {
+        const clientSales = sales.filter(s => s.clientId === clientId).map(s => ({ ...s, type: 'sale' as const }));
+        const clientPayments = payments.filter(p => p.clientId === clientId).map(p => ({ ...p, type: 'payment' as const }));
+        
+        const all: ClientTransaction[] = [...clientSales, ...clientPayments];
+
+        return all.sort((a, b) => {
+            const dateA = new Date(a.type === 'sale' ? a.saleDate : a.paymentDate);
+            const dateB = new Date(b.type === 'sale' ? b.saleDate : b.paymentDate);
+            return dateB.getTime() - dateA.getTime();
+        });
+    }, [sales, payments, clientId]);
+
+    if (!client) {
+        return <Card><p className="text-center text-red-500">Cliente não encontrado.</p></Card>;
+    }
+    
+    return (
+        <div className="space-y-8">
+            <Card>
+                <div className="flex justify-between items-start flex-wrap gap-4">
+                    <div>
+                        <h1 className="text-3xl font-bold text-rose-800">{client.fullName}</h1>
+                        <p className="text-gray-600">{client.phone}</p>
+                        <p className="text-gray-600">{client.address}</p>
+                    </div>
+                    <div className="text-right">
+                        <p className="text-sm font-medium text-gray-500">Saldo Devedor</p>
+                        <p className={`text-3xl font-extrabold ${balance > 0 ? 'text-red-500' : 'text-green-600'}`}>
+                            {balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        </p>
+                    </div>
+                </div>
+                <div className="border-t border-pink-200 mt-4 pt-4 flex gap-4 flex-wrap">
+                    <Button onClick={() => onNavigate('add_sale', client.id)}>Nova Venda</Button>
+                    <Button onClick={() => onNavigate('add_payment', client.id)} variant="secondary">Registrar Pagamento</Button>
+                    <Button onClick={() => setIsEditModalOpen(true)} variant="secondary">Editar Cliente</Button>
+                </div>
+            </Card>
+
+            <Card>
+                <h2 className="text-xl font-bold text-rose-800 mb-4">Extrato do Cliente</h2>
+                {transactions.length > 0 ? (
+                    <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2">
+                        {transactions.map(tx => (
+                            tx.type === 'sale' ? (
+                                <div key={`sale-${tx.id}`} className="p-3 bg-rose-50 border border-rose-100 rounded-lg flex justify-between items-center">
+                                    <div>
+                                        <p className="font-semibold text-gray-800">{tx.productName} (x{tx.quantity})</p>
+                                        <p className="text-xs text-gray-500">{new Date(tx.saleDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                                    </div>
+                                    <p className="font-bold text-rose-600">-{tx.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                                </div>
+                            ) : (
+                                <div key={`payment-${tx.id}`} className="p-3 bg-emerald-50 border border-emerald-100 rounded-lg flex justify-between items-center">
+                                    <div>
+                                        <p className="font-semibold text-gray-800">Pagamento Recebido</p>
+                                        <p className="text-xs text-gray-500">{new Date(tx.paymentDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                                    </div>
+                                    <p className="font-bold text-emerald-600">+{tx.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                                </div>
+                            )
+                        ))}
+                    </div>
+                ) : (
+                    <EmptyState icon={HistoryIcon} title="Nenhuma transação" message="Este cliente ainda não possui vendas ou pagamentos registrados." />
+                )}
+            </Card>
+            <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Editar Cliente">
+                <ClientForm client={client} onDone={() => setIsEditModalOpen(false)} />
+            </Modal>
+        </div>
     );
 };
 

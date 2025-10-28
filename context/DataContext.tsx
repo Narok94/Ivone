@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import useLocalStorage from '../hooks/useLocalStorage';
 import { Client, StockItem, Sale, Payment } from '../types';
@@ -16,7 +15,9 @@ interface DataContextType {
   deleteStockItem: (itemId: string) => void;
 
   sales: Sale[];
-  addSale: (sale: Omit<Sale, 'id' | 'total'>) => void;
+  addSale: (sale: Omit<Sale, 'id' | 'total'>) => Sale;
+  updateSale: (sale: Sale) => Sale;
+  deleteSale: (saleId: string) => void;
 
   payments: Payment[];
   addPayment: (payment: Omit<Payment, 'id'>) => void;
@@ -64,7 +65,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const newSale: Sale = { 
         ...saleData, 
         id: crypto.randomUUID(),
-        total: saleData.quantity * saleData.unitPrice,
+        total: parseFloat((saleData.quantity * saleData.unitPrice).toFixed(2)),
     };
     setSales(prev => [...prev, newSale]);
 
@@ -75,6 +76,51 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             updateStockItemQuantity(newSale.stockItemId, newQuantity);
         }
     }
+    return newSale;
+  };
+  
+  const updateSale = (updatedSale: Sale) => {
+    const originalSale = sales.find(s => s.id === updatedSale.id);
+    if (!originalSale) return updatedSale;
+
+    // Use functional updates to prevent race conditions with stock
+    setStockItems(prevStock => {
+        let newStock = [...prevStock];
+        // Revert old stock quantity
+        if (originalSale.stockItemId) {
+            newStock = newStock.map(item => 
+                item.id === originalSale.stockItemId ? { ...item, quantity: item.quantity + originalSale.quantity } : item
+            );
+        }
+        // Apply new stock quantity
+        if (updatedSale.stockItemId) {
+            newStock = newStock.map(item =>
+                item.id === updatedSale.stockItemId ? { ...item, quantity: item.quantity - updatedSale.quantity } : item
+            );
+        }
+        return newStock;
+    });
+
+    const newTotal = parseFloat((updatedSale.quantity * updatedSale.unitPrice).toFixed(2));
+    const finalSaleData = { ...updatedSale, total: newTotal };
+    setSales(prev => prev.map(s => (s.id === updatedSale.id ? finalSaleData : s)));
+    return finalSaleData;
+  };
+
+
+  const deleteSale = (saleId: string) => {
+    const saleToDelete = sales.find(s => s.id === saleId);
+    if (!saleToDelete) return;
+
+    // Return item to stock if it was a stock item
+    if (saleToDelete.stockItemId) {
+        const stockItem = stockItems.find(item => item.id === saleToDelete.stockItemId);
+        if (stockItem) {
+            updateStockItemQuantity(saleToDelete.stockItemId, stockItem.quantity + saleToDelete.quantity);
+        }
+    }
+
+    setSales(prev => prev.filter(s => s.id !== saleId));
   };
 
   const addPayment = (paymentData: Omit<Payment, 'id'>) => {
@@ -95,7 +141,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const value = {
     clients, addClient, updateClient, deleteClient, getClientById,
     stockItems, addStockItem, updateStockItemQuantity, deleteStockItem,
-    sales, addSale,
+    sales, addSale, updateSale, deleteSale,
     payments, addPayment,
     clientBalances
   };
