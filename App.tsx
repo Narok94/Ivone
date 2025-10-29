@@ -42,6 +42,21 @@ const CleanMagicIcon: FC<{className?: string}> = ({className}) => (
     </svg>
 );
 
+// --- HOOK for mobile detection ---
+const useIsMobile = (breakpoint = 768): boolean => {
+    const [isMobile, setIsMobile] = useState(window.innerWidth < breakpoint);
+
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < breakpoint);
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [breakpoint]);
+
+    return isMobile;
+};
 
 // --- VIEWS & FORMS (defined globally to be used by both layouts) ---
 type View = 'dashboard' | 'clients' | 'add_client' | 'add_sale' | 'stock' | 'add_payment' | 'reports' | 'history' | 'pending_payments' | 'sales_view' | 'all_payments' | 'client_detail' | 'manage_users';
@@ -199,6 +214,7 @@ const IvoneLayout: React.FC = () => {
   
   const [prefilledClientId, setPrefilledClientId] = useState<string | null>(null);
   const { logout, currentUser } = useAuth();
+  const isMobile = useIsMobile();
 
   const isMaleTheme = currentUser?.gender === 'male';
 
@@ -308,7 +324,7 @@ const IvoneLayout: React.FC = () => {
         {renderView()}
       </main>
 
-      <AIAssistant showToast={showToast} />
+      {isMobile && <AIAssistant showToast={showToast} />}
     </div>
   );
 };
