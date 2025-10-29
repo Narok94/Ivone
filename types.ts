@@ -1,4 +1,3 @@
-
 export interface Client {
   id: string;
   fullName: string;
@@ -36,4 +35,12 @@ export interface Payment {
   paymentDate: string;
   amount: number;
   observation: string;
+}
+
+export interface User {
+  id: string;
+  username: string;
+  password: string;
+  role: 'admin' | 'user';
+  gender: 'male' | 'female';
 }

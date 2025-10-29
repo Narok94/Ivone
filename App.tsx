@@ -1,12 +1,9 @@
-
-
-
-
 import React, { useState, useMemo, FC, useEffect, ReactNode, useRef } from 'react';
 import { GoogleGenAI, Chat } from "@google/genai";
-import { useData } from './context/DataContext';
-import { Client, StockItem, Sale, Payment } from './types';
+import { useData } from './contexto/DataContext';
+import { Client, StockItem, Sale, Payment, User } from './types';
 import { Card, Button, Input, Modal, TextArea, Select } from './components/common';
+import { useAuth } from './contexto/AuthContext';
 
 // --- ICONS ---
 const UserPlusIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="22" x2="22" y1="8" y2="14"/><line x1="19" x2="25" y1="11" y2="11"/></svg>);
@@ -25,10 +22,21 @@ const EditIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://
 const TrashIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>);
 const SparklesIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 3a6 6 0 0 0 9 9a2 2 0 1 1-4 0a2 2 0 0 0-4-4a2 2 0 1 1 0-4a6 6 0 0 0-9-9a2 2 0 1 1 4 0a2 2 0 0 0 4 4a2 2 0 1 1 0 4Z"/></svg>);
 const ShieldIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>);
-const BotIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>);
+const BotMessageSquareIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 10h.01"/><path d="M12 10h.01"/><path d="M16 10h.01"/></svg>);
 const MicrophoneIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>);
 const SendIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>);
+const LogOutIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>);
+const HomeIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>);
+const UsersCogIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><circle cx="19" cy="11" r="2"/><path d="M19 8v1"/><path d="M19 13v1"/><path d="m21.6 9.5-.87.5"/><path d="m17.27 12-.87.5"/><path d="m21.6 12.5-.87-.5"/><path d="m17.27 10-.87-.5"/></svg>);
+const KeyIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>);
+const DogIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M10 5.172C10 3.782 8.423 2.679 7.12 3.373A4 4 0 0 0 4.783 7.12C5.321 8.423 6.218 10 5.172 10H5a2 2 0 0 0-2 2v1a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-3a2 2 0 0 1 2-2h1.172c1.046 0 1.577-1.33 1.046-2.124A4.002 4.002 0 0 0 10 5.172Z"/><path d="M14 12a2 2 0 0 0-2-2h-2"/><path d="M16.63 12.87a2 2 0 1 1 2.24 2.24"/><path d="M18 16c-2 0-3-1-3-2V8a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1a2 2 0 0 0 2 2h1a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2.172c-1.046 0-1.577 1.33-1.046 2.124A4.002 4.002 0 0 1 18 16Z"/></svg>);
+const CatIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 5c.67 0 1.35.09 2 .26 1.78.47 2.94 2.13 2.5 3.92A4.015 4.015 0 0 1 12 10c-.67 0-1.35-.09-2-.26-1.78-.47-2.94-2.13-2.5-3.92A4.015 4.015 0 0 1 12 5Z"/><path d="M19.62 9.24c.32.44.58.93.78 1.46 1.34 3.54-1.26 7.3-4.4 7.3h-1c-1.33 0-2.5 .54-3.34 1.34-1.34 1.34-3.56 1.34-4.89 0-1.34-1.34-1.34-3.56 0-4.89 1.33-1.33 3.55-1.33 4.88 0A4.015 4.015 0 0 1 12 18c2.4 0 4.1-1.68 4.7-4 .37-1.42.3-2.82-.2-4.1-.17-.42-.38-.83-.62-1.22"/><path d="M18 10a1 1 0 1 0-2 0"/><path d="M6 10a1 1 0 1 0-2 0"/></svg>);
+const MenuIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>);
+const RefreshCwIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 2v6h6"/><path d="M21 12A9 9 0 0 0 6 5.3L3 8"/><path d="M21 22v-6h-6"/><path d="M3 12a9 9 0 0 0 15 6.7l3-2.7"/></svg>);
 
+
+// --- VIEWS & FORMS (defined globally to be used by both layouts) ---
+type View = 'dashboard' | 'clients' | 'add_client' | 'add_sale' | 'stock' | 'add_payment' | 'reports' | 'history' | 'pending_payments' | 'all_sales' | 'all_payments' | 'client_detail' | 'manage_users';
 
 // --- TOAST NOTIFICATION ---
 const Toast: FC<{ message: string; onClose: () => void }> = ({ message, onClose }) => {
@@ -38,7 +46,7 @@ const Toast: FC<{ message: string; onClose: () => void }> = ({ message, onClose 
   }, [onClose]);
 
   return (
-    <div className="fixed top-24 right-6 bg-gradient-to-r from-pink-500 to-rose-500 text-white py-3 px-5 rounded-xl shadow-lg flex items-center justify-between z-50 animate-slide-in">
+    <div className="fixed top-24 right-6 bg-gradient-to-r from-pink-500 to-rose-500 text-white py-3 px-5 rounded-2xl shadow-lg flex items-center justify-between z-50 animate-slide-in">
       <SparklesIcon className="w-5 h-5 mr-3"/>
       <p className="font-semibold">{message}</p>
       <button onClick={onClose} className="ml-4 text-xl font-semibold leading-none hover:text-pink-100">&times;</button>
@@ -48,7 +56,7 @@ const Toast: FC<{ message: string; onClose: () => void }> = ({ message, onClose 
 
 // --- EMPTY STATE ---
 const EmptyState: FC<{ icon: FC<{className?: string}>; title: string; message: string; actionButton?: ReactNode }> = ({ icon: Icon, title, message, actionButton }) => (
-    <div className="text-center py-12 px-6 bg-pink-50/50 rounded-2xl border-2 border-dashed border-pink-200">
+    <div className="text-center py-12 px-6 bg-pink-50/50 rounded-3xl border-2 border-dashed border-pink-200">
         <div className="p-4 bg-gradient-to-br from-pink-100 to-rose-100 rounded-full inline-block mb-4">
             <Icon className="w-12 h-12 text-pink-500" />
         </div>
@@ -58,19 +66,133 @@ const EmptyState: FC<{ icon: FC<{className?: string}>; title: string; message: s
     </div>
 );
 
-type View = 'dashboard' | 'clients' | 'add_client' | 'add_sale' | 'stock' | 'add_payment' | 'reports' | 'history' | 'pending_payments' | 'all_sales' | 'all_payments' | 'client_detail';
-
+// --- APP ROUTER ---
 const App: React.FC = () => {
+    const { currentUser } = useAuth();
+
+    useEffect(() => {
+        // Apply theme based on logged-in user's gender
+        if (currentUser?.gender === 'male') {
+            document.documentElement.classList.add('theme-male');
+        } else {
+            document.documentElement.classList.remove('theme-male');
+        }
+    }, [currentUser]);
+
+    if (!currentUser) {
+        return <LoginScreen />;
+    }
+
+    if (currentUser.role === 'admin') {
+        return <AdminLayout />;
+    }
+
+    return <IvoneLayout />;
+};
+
+// --- LOGIN SCREEN ---
+const LoginScreen: FC = () => {
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [rememberMe, setRememberMe] = useState(false);
+    const [error, setError] = useState('');
+    const { login } = useAuth();
+
+    useEffect(() => {
+        const rememberedUser = localStorage.getItem('rememberedUsername');
+        if (rememberedUser) {
+            setUsername(rememberedUser);
+            setRememberMe(true);
+        }
+    }, []);
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        try {
+            login(username, password);
+            if (rememberMe) {
+                localStorage.setItem('rememberedUsername', username);
+            } else {
+                localStorage.removeItem('rememberedUsername');
+            }
+        } catch (err: any) {
+            setError(err.message);
+        }
+    };
+
+    return (
+        <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-purple-50 via-pink-50 to-rose-100 relative overflow-hidden">
+             {/* Decorative Blobs */}
+            <div className="absolute w-96 h-96 bg-purple-300 rounded-full -top-20 -left-20 opacity-30 mix-blend-multiply filter blur-xl animate-blob"></div>
+            <div className="absolute w-96 h-96 bg-rose-300 rounded-full -bottom-24 right-10 opacity-30 mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
+            <div className="absolute w-72 h-72 bg-pink-300 rounded-full -bottom-10 -left-10 opacity-30 mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
+
+            <DogIcon className="absolute -left-5 bottom-0 text-gray-300/50 opacity-50"/>
+            <CatIcon className="absolute -right-5 top-0 text-gray-300/50 opacity-50"/>
+
+            <main className="z-10 w-full max-w-md mx-auto p-6">
+                <Card className="!p-8">
+                     <h1 className="text-3xl font-extrabold text-center tracking-tight bg-gradient-to-r from-pink-500 to-rose-500 text-transparent bg-clip-text mb-2">
+                        Sistema de Vendas
+                    </h1>
+                    <p className="text-center text-gray-500 mb-8">Acesse sua conta para continuar.</p>
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <Input 
+                            label="Usuário" 
+                            id="username" 
+                            value={username} 
+                            onChange={e => setUsername(e.target.value)}
+                            autoComplete="username"
+                            required 
+                        />
+                        <Input 
+                            label="Senha" 
+                            id="password" 
+                            type="password"
+                            value={password}
+                            onChange={e => setPassword(e.target.value)}
+                            autoComplete="current-password"
+                            required 
+                        />
+                         <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                                <input
+                                    id="remember-me"
+                                    name="remember-me"
+                                    type="checkbox"
+                                    checked={rememberMe}
+                                    onChange={(e) => setRememberMe(e.target.checked)}
+                                    className="h-4 w-4 text-pink-600 focus:ring-pink-500 border-gray-300 rounded"
+                                />
+                                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+                                    Lembrar usuário
+                                </label>
+                            </div>
+                        </div>
+                        {error && <p className="text-red-500 text-sm text-center pt-2">{error}</p>}
+                        <Button type="submit" className="w-full !py-3 !text-base !mt-6">Entrar</Button>
+                    </form>
+                </Card>
+            </main>
+        </div>
+    );
+};
+
+
+// --- IVONE (STANDARD) LAYOUT ---
+const IvoneLayout: React.FC = () => {
   const [activeView, setActiveView] = useState<View>('dashboard');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [editingSale, setEditingSale] = useState<Sale | null>(null);
   const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [paymentSuggestion, setPaymentSuggestion] = useState<Sale | null>(null);
-  const [isBackupModalOpen, setBackupModalOpen] = useState(false);
   
-  // State for pre-filling forms
   const [prefilledClientId, setPrefilledClientId] = useState<string | null>(null);
+  const { logout, currentUser } = useAuth();
+
+  const isMaleTheme = currentUser?.gender === 'male';
 
   const showToast = (message: string) => {
       setToastMessage(message);
@@ -124,10 +246,10 @@ const App: React.FC = () => {
       case 'client_detail': return <ClientDetail clientId={selectedClientId!} onNavigate={handleNavigate} />;
       case 'add_client': return (
         <Card>
-            <h1 className="text-2xl font-bold text-rose-800 mb-6">Adicionar Nova Cliente 📝</h1>
+            <h1 className="text-2xl font-bold text-rose-800 mb-6">Adicionar Novo Cliente 📝</h1>
             <ClientForm onDone={() => {
                 setActiveView('dashboard');
-                showToast('Cliente cadastrada com sucesso!');
+                showToast('Cliente cadastrado com sucesso!');
             }} />
         </Card>
       );
@@ -147,10 +269,14 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-pink-50 text-gray-800">
       {toastMessage && <Toast message={toastMessage} onClose={() => setToastMessage(null)} />}
       {paymentSuggestion && <PaymentSuggestionModal sale={paymentSuggestion} onClose={handleClosePaymentSuggestion} showToast={showToast}/>}
-      <BackupRestoreModal isOpen={isBackupModalOpen} onClose={() => setBackupModalOpen(false)} showToast={showToast}/>
 
-      <header className="bg-white/70 backdrop-blur-lg p-4 shadow-md flex items-center justify-center sticky top-0 z-10">
-         <h1 className="text-lg sm:text-xl md:text-2xl font-extrabold tracking-tight bg-gradient-to-r from-pink-500 to-rose-500 text-transparent bg-clip-text whitespace-nowrap">Sistema de vendas Ivone 💖✨</h1>
+      <header className="bg-white/70 backdrop-blur-lg p-4 shadow-md flex items-center justify-center relative sticky top-0 z-10">
+         <h1 className="text-lg sm:text-xl md:text-2xl font-extrabold tracking-tight bg-gradient-to-r from-pink-500 to-rose-500 text-transparent bg-clip-text whitespace-nowrap">
+            {isMaleTheme ? `Bem vindo ${currentUser?.username} 💪🔧` : `Bem vinda ${currentUser?.username} 💖✨`}
+         </h1>
+         <button onClick={logout} title="Sair" className="absolute right-4 p-2 rounded-full hover:bg-pink-100 text-pink-600 transition-colors">
+            <LogOutIcon className="w-6 h-6"/>
+         </button>
       </header>
       
       <HeaderSummary setActiveView={setActiveView} />
@@ -174,23 +300,345 @@ const App: React.FC = () => {
         {renderView()}
       </main>
 
-      <button
-        onClick={() => setBackupModalOpen(true)}
-        title="Backup e Restauração"
-        aria-label="Backup e Restauração"
-        className="fixed bottom-4 right-4 z-20 w-12 h-12 bg-white/60 backdrop-blur-md rounded-xl shadow-md border border-pink-100 flex items-center justify-center text-pink-500 hover:bg-white/80 hover:shadow-lg transition-all duration-300"
-      >
-        <ShieldIcon className="w-6 h-6" />
-      </button>
-
       <AIAssistant showToast={showToast} />
+      <SyncManager showToast={showToast} />
     </div>
   );
 };
 
+
+// --- ADMIN LAYOUT ---
+const AdminLayout: FC = () => {
+    const [activeView, setActiveView] = useState<View>('dashboard');
+    const [toastMessage, setToastMessage] = useState<string | null>(null);
+    const [isBackupModalOpen, setBackupModalOpen] = useState(false);
+    const [editingSale, setEditingSale] = useState<Sale | null>(null);
+    const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
+    const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+    const [prefilledClientId, setPrefilledClientId] = useState<string | null>(null);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+    const { logout, currentUser } = useAuth();
+    
+    const showToast = (message: string) => {
+        setToastMessage(message);
+    };
+
+    const handleEditSale = (sale: Sale) => {
+        setEditingSale(sale);
+        setActiveView('add_sale');
+    };
+
+    const handleEditPayment = (payment: Payment) => {
+        setEditingPayment(payment);
+        setActiveView('add_payment');
+    };
+
+    const handleViewClient = (clientId: string) => {
+        setSelectedClientId(clientId);
+        setActiveView('client_detail');
+    };
+    
+    const handleNavigate = (view: View, clientId?: string) => {
+        setPrefilledClientId(clientId || null);
+        setActiveView(view);
+    };
+
+    const handleSaleSuccess = (sale: Sale, isEditing: boolean) => {
+      showToast(isEditing ? 'Venda atualizada!' : 'Venda cadastrada!');
+      setEditingSale(null);
+      setActiveView('all_sales');
+    };
+    
+    const handlePaymentSuccess = (isEditing: boolean) => {
+        showToast(isEditing ? 'Pagamento atualizado!' : 'Pagamento registrado!');
+        setEditingPayment(null);
+        setActiveView('all_payments');
+    };
+
+    const renderView = () => {
+        switch (activeView) {
+            case 'dashboard': return <AdminDashboard />;
+            case 'clients': return <ManageClients setActiveView={setActiveView} onViewClient={handleViewClient} showToast={showToast} />;
+            case 'client_detail': return <ClientDetail clientId={selectedClientId!} onNavigate={handleNavigate} />;
+            case 'add_client': return ( <ClientForm onDone={() => { setActiveView('clients'); showToast('Cliente salvo!'); }} /> );
+            case 'add_sale': return <SaleForm editingSale={editingSale} onSaleSuccess={handleSaleSuccess} prefilledClientId={prefilledClientId} />;
+            case 'stock': return <StockManager />;
+            case 'add_payment': return <PaymentForm editingPayment={editingPayment} onPaymentSuccess={handlePaymentSuccess} prefilledClientId={prefilledClientId} />;
+            case 'reports': return <Reports />;
+            case 'history': return <History />;
+            case 'pending_payments': return <PendingPayments onViewClient={handleViewClient} />;
+            case 'all_sales': return <AllSales onEditSale={handleEditSale} showToast={showToast} />;
+            case 'all_payments': return <AllPayments onEditPayment={handleEditPayment} showToast={showToast} />;
+            case 'manage_users': return <ManageUsers showToast={showToast} />;
+            default: return <AdminDashboard />;
+        }
+    };
+
+    const navItems = [
+        { id: 'dashboard', icon: HomeIcon, title: 'Dashboard' },
+        { id: 'all_sales', icon: ShoppingCartIcon, title: 'Vendas' },
+        { id: 'all_payments', icon: CreditCardIcon, title: 'Recebimentos' },
+        { id: 'clients', icon: UsersIcon, title: 'Clientes' },
+        { id: 'stock', icon: ArchiveIcon, title: 'Estoque' },
+        { id: 'reports', icon: BarChartIcon, title: 'Relatórios' },
+        { id: 'manage_users', icon: UsersCogIcon, title: 'Usuários' },
+        { id: 'backup_restore', icon: ShieldIcon, title: 'Backup/Restore' },
+    ];
+
+    return (
+        <div className="min-h-screen bg-slate-100 text-slate-800">
+            {toastMessage && <Toast message={toastMessage} onClose={() => setToastMessage(null)} />}
+            <BackupRestoreModal isOpen={isBackupModalOpen} onClose={() => setBackupModalOpen(false)} showToast={showToast}/>
+            
+            {/* Sidebar */}
+            <aside className={`fixed inset-y-0 left-0 z-30 w-64 bg-slate-800 text-slate-200 flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                <div className="p-6 text-center border-b border-slate-700">
+                    <h1 className="text-xl font-bold">Admin Panel</h1>
+                </div>
+                <nav className="flex-1 p-4 space-y-2">
+                    {navItems.map(item => (
+                        <button 
+                            key={item.id} 
+                            onClick={() => {
+                                if (item.id === 'backup_restore') {
+                                    setBackupModalOpen(true);
+                                } else {
+                                    setActiveView(item.id as View);
+                                }
+                                setIsSidebarOpen(false);
+                            }}
+                            className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg text-left transition-colors ${activeView === item.id ? 'bg-slate-700 text-white' : 'hover:bg-slate-700/50'}`}
+                        >
+                            <item.icon className="w-5 h-5" />
+                            <span>{item.title}</span>
+                        </button>
+                    ))}
+                </nav>
+                <div className="p-4 border-t border-slate-700">
+                    <button onClick={logout} className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-left hover:bg-slate-700/50">
+                        <LogOutIcon className="w-5 h-5"/>
+                        <span>Sair ({currentUser?.username})</span>
+                    </button>
+                </div>
+            </aside>
+            
+            {isSidebarOpen && (
+                <div 
+                    className="fixed inset-0 bg-black/50 z-20 lg:hidden"
+                    onClick={() => setIsSidebarOpen(false)}
+                ></div>
+            )}
+
+
+            {/* Main Content */}
+            <div className="lg:ml-64 flex-1 flex flex-col min-h-screen">
+                <header className="bg-white p-4 shadow-sm z-10 flex items-center gap-4">
+                    <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden text-slate-600 p-1">
+                        <MenuIcon className="w-6 h-6"/>
+                    </button>
+                    <h2 className="text-xl font-bold text-slate-700">
+                        {navItems.find(i => i.id === activeView)?.title || 'Dashboard'}
+                    </h2>
+                </header>
+                <main className="flex-1 p-6 overflow-y-auto">
+                    {renderView()}
+                </main>
+            </div>
+            <SyncManager showToast={showToast} />
+        </div>
+    );
+}
+
+// --- ADMIN DASHBOARD ---
+const AdminDashboard: FC = () => {
+    const { users } = useAuth();
+
+    const userStats = useMemo(() => ({
+        total: users.length,
+        admins: users.filter(u => u.role === 'admin').length,
+        standard: users.filter(u => u.role === 'user').length,
+    }), [users]);
+    
+    return (
+        <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <Card className="!bg-white">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-slate-100 rounded-full">
+                            <UsersIcon className="w-6 h-6 text-slate-600"/>
+                        </div>
+                        <div>
+                            <p className="text-sm font-medium text-slate-500">Total de Usuários</p>
+                            <p className="text-3xl font-bold text-slate-800">{userStats.total}</p>
+                        </div>
+                    </div>
+                </Card>
+                 <Card className="!bg-white">
+                    <div className="flex items-center gap-4">
+                         <div className="p-3 bg-slate-100 rounded-full">
+                            <ShieldIcon className="w-6 h-6 text-slate-600"/>
+                        </div>
+                        <div>
+                            <p className="text-sm font-medium text-slate-500">Administradores</p>
+                            <p className="text-3xl font-bold text-slate-800">{userStats.admins}</p>
+                        </div>
+                    </div>
+                </Card>
+                 <Card className="!bg-white">
+                     <div className="flex items-center gap-4">
+                        <div className="p-3 bg-slate-100 rounded-full">
+                            <UsersCogIcon className="w-6 h-6 text-slate-600"/>
+                        </div>
+                        <div>
+                            <p className="text-sm font-medium text-slate-500">Usuários Padrão</p>
+                            <p className="text-3xl font-bold text-slate-800">{userStats.standard}</p>
+                        </div>
+                    </div>
+                </Card>
+            </div>
+            
+            <Card className="!bg-white">
+                <h3 className="font-bold text-lg mb-4 text-slate-700">Visão Geral dos Usuários</h3>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead>
+                            <tr className="bg-slate-50 uppercase text-xs font-semibold text-slate-600">
+                                <th className="p-3">Nome de Usuário</th>
+                                <th className="p-3">Permissão</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {users.map(user => (
+                                <tr key={user.id}>
+                                    <td className="p-3 font-medium text-slate-800">{user.username}</td>
+                                    <td className="p-3 text-slate-600">
+                                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                                            user.role === 'admin' 
+                                            ? 'bg-blue-100 text-blue-800' 
+                                            : 'bg-green-100 text-green-800'
+                                        }`}>
+                                            {user.role === 'admin' ? 'Administrador' : 'Usuário'}
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </Card>
+        </div>
+    );
+}
+
+// --- MANAGE USERS (ADMIN ONLY) ---
+const ManageUsers: FC<{showToast: (msg: string) => void;}> = ({ showToast }) => {
+    const { users, addUser, updatePassword, deleteUser } = useAuth();
+    const [isAddUserModalOpen, setAddUserModalOpen] = useState(false);
+    const [isEditUserModalOpen, setEditUserModalOpen] = useState<User | null>(null);
+    const [newUser, setNewUser] = useState({ username: '', password: '', gender: 'female' as 'male' | 'female' });
+    const [newPassword, setNewPassword] = useState('');
+
+    const handleAddUser = (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            addUser(newUser.username, newUser.password, newUser.gender);
+            showToast(`Usuário ${newUser.username} criado!`);
+            setNewUser({ username: '', password: '', gender: 'female' });
+            setAddUserModalOpen(false);
+        } catch (error: any) {
+            alert(error.message);
+        }
+    };
+
+    const handleUpdatePassword = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (isEditUserModalOpen && newPassword) {
+            try {
+                updatePassword(isEditUserModalOpen.id, newPassword);
+                showToast(`Senha de ${isEditUserModalOpen.username} atualizada!`);
+                setNewPassword('');
+                setEditUserModalOpen(null);
+            } catch (error: any) {
+                alert(error.message);
+            }
+        }
+    };
+
+    const handleDeleteUser = (user: User) => {
+        if (window.confirm(`Tem certeza que deseja excluir o usuário ${user.username}? Esta ação não pode ser desfeita.`)) {
+            try {
+                deleteUser(user.id);
+                showToast(`Usuário ${user.username} excluído!`);
+            } catch (error: any) {
+                alert(error.message);
+            }
+        }
+    };
+
+    return (
+        <Card>
+            <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold">Gerenciar Usuários</h2>
+                <Button onClick={() => setAddUserModalOpen(true)}>Criar Usuário</Button>
+            </div>
+            <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                    <thead>
+                        <tr className="bg-slate-100 uppercase text-sm font-semibold">
+                            <th className="p-3">Usuário</th>
+                            <th className="p-3">Permissão</th>
+                            <th className="p-3">Gênero</th>
+                            <th className="p-3 text-right">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {users.map(user => (
+                            <tr key={user.id} className="border-b">
+                                <td className="p-3 font-medium">{user.username}</td>
+                                <td className="p-3 capitalize">{user.role}</td>
+                                <td className="p-3 capitalize">{user.gender === 'male' ? 'Masculino' : 'Feminino'}</td>
+                                <td className="p-3 text-right">
+                                    <div className="flex gap-2 justify-end">
+                                        <button onClick={() => setEditUserModalOpen(user)} className="text-blue-600 hover:text-blue-800" title="Mudar Senha"><KeyIcon /></button>
+                                        {user.role !== 'admin' && <button onClick={() => handleDeleteUser(user)} className="text-red-600 hover:text-red-800" title="Excluir"><TrashIcon /></button>}
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Add User Modal */}
+            <Modal isOpen={isAddUserModalOpen} onClose={() => setAddUserModalOpen(false)} title="Criar Novo Usuário">
+                <form onSubmit={handleAddUser} className="space-y-4">
+                    <Input label="Nome de usuário" id="newUsername" value={newUser.username} onChange={e => setNewUser(p => ({...p, username: e.target.value}))} required />
+                    <Input label="Senha" id="newPassword" type="password" value={newUser.password} onChange={e => setNewUser(p => ({...p, password: e.target.value}))} required />
+                    <Select label="Gênero" id="newGender" value={newUser.gender} onChange={e => setNewUser(p => ({...p, gender: e.target.value as 'male' | 'female'}))}>
+                        <option value="female">Feminino</option>
+                        <option value="male">Masculino</option>
+                    </Select>
+                    <Button type="submit">Criar</Button>
+                </form>
+            </Modal>
+            
+            {/* Edit User Modal */}
+            <Modal isOpen={!!isEditUserModalOpen} onClose={() => setEditUserModalOpen(null)} title={`Mudar senha de ${isEditUserModalOpen?.username}`}>
+                <form onSubmit={handleUpdatePassword} className="space-y-4">
+                    <Input label="Nova Senha" id="editPassword" type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} required autoFocus/>
+                    <Button type="submit">Atualizar Senha</Button>
+                </form>
+            </Modal>
+        </Card>
+    );
+};
+
+
 // --- AI ASSISTANT ---
 const AIAssistant: FC<{ showToast: (message: string) => void }> = ({ showToast }) => {
     const { addClient, addSale, addPayment, clients } = useData();
+    const { currentUser } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<{ sender: 'user' | 'ai'; text: string | ReactNode }[]>([]);
     const [userInput, setUserInput] = useState('');
@@ -200,9 +648,12 @@ const AIAssistant: FC<{ showToast: (message: string) => void }> = ({ showToast }
     const [isDragging, setIsDragging] = useState(false);
     const wasDraggedRef = useRef(false);
     const dragStartPos = useRef({ x: 0, y: 0 });
+    const orbRef = useRef<HTMLDivElement>(null);
     const chatRef = useRef<Chat | null>(null);
     const recognitionRef = useRef<any>(null);
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+    const isMaleTheme = currentUser?.gender === 'male';
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -215,15 +666,22 @@ const AIAssistant: FC<{ showToast: (message: string) => void }> = ({ showToast }
         }
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const clientNames = clients.map(c => c.fullName).join(', ') || 'Nenhum';
-        const systemInstruction = `Você é 'IV.IA', uma assistente virtual para o app 'Sistema de Vendas Ivone'. Seu objetivo é ajudar a usuária a cadastrar clientes, vendas e pagamentos através de uma conversa. Clientes existentes: ${clientNames}. Ações disponíveis: 1. 'add_client': Campos obrigatórios: fullName, address, phone, cpf. Campos opcionais: email, observation. 2. 'add_sale': Campos obrigatórios: clientName (deve ser um dos clientes existentes da lista), productName, quantity, unitPrice. Campos opcionais: observation. 3. 'add_payment': Campos obrigatórios: clientName (deve ser um dos clientes existentes da lista), amount. Campos opcionais: observation. COMO PROCEDER: Seja amigável e use emojis 💖✨. Peça UMA informação de cada vez. Quando tiver TODOS os campos obrigatórios para uma ação, responda APENAS com um JSON no seguinte formato: {"action": "action_name", "data": { ...dados... }}. NÃO adicione nenhum texto antes ou depois do JSON. Se a usuária pedir para cancelar, responda "Ok, cancelando a operação. ✨" e esqueça os dados coletados. Se a usuária conversar, responda de forma natural. Se ela te cumprimentar, apresente-se e diga o que pode fazer.`;
         
+        const assistantName = isMaleTheme ? 'Rob' : 'Rebeca';
+        const emojis = isMaleTheme ? '💪🔧' : '💖✨';
+        const systemInstruction = `Você é '${assistantName}', um assistente virtual para o app 'Sistema de Vendas'. Seu objetivo é ajudar o usuário a cadastrar clientes, vendas e pagamentos através de uma conversa. Clientes existentes: ${clientNames}. Ações disponíveis: 1. 'add_client': Campos obrigatórios: fullName, address, phone, cpf. Campos opcionais: email, observation. 2. 'add_sale': Campos obrigatórios: clientName (deve ser um dos clientes existentes da lista), productName, quantity, unitPrice. Campos opcionais: observation. 3. 'add_payment': Campos obrigatórios: clientName (deve ser um dos clientes existentes da lista), amount. Campos opcionais: observation. COMO PROCEDER: Seja amigável e use emojis ${emojis}. Peça UMA informação de cada vez. Quando tiver TODOS os campos obrigatórios para uma ação, responda APENAS com um JSON no seguinte formato: {"action": "action_name", "data": { ...dados... }}. NÃO adicione nenhum texto antes ou depois do JSON. Se o usuário pedir para cancelar, responda "Ok, cancelando a operação. ✨" e esqueça os dados coletados. Se o usuário conversar, responda de forma natural. Se ele te cumprimentar, apresente-se e diga o que pode fazer.`;
+
         chatRef.current = ai.chats.create({
             model: 'gemini-2.5-flash',
             config: { systemInstruction },
         });
 
-        setMessages([{ sender: 'ai', text: 'Olá! Eu sou a IV.IA, sua assistente virtual. 💖 Como posso te ajudar hoje? (Ex: "cadastrar cliente")' }]);
-    }, [clients]);
+        const initialMessage = isMaleTheme
+            ? `Olá! Eu sou o Rob, seu assistente virtual. 🔧 Como posso te ajudar hoje? (Ex: "cadastrar cliente")`
+            : `Olá! Eu sou a Rebeca, sua assistente virtual. 💖 Como posso te ajudar hoje? (Ex: "cadastrar cliente")`;
+
+        setMessages([{ sender: 'ai', text: initialMessage }]);
+    }, [clients, isMaleTheme]);
 
      useEffect(() => {
         // FIX: Cast window to `any` to access non-standard SpeechRecognition APIs
@@ -349,36 +807,79 @@ const AIAssistant: FC<{ showToast: (message: string) => void }> = ({ showToast }
 
     // Drag handlers
     const handleMouseDown = (e: React.MouseEvent) => {
+        if (orbRef.current) {
+            orbRef.current.style.transition = 'none';
+        }
         wasDraggedRef.current = false;
         setIsDragging(true);
         dragStartPos.current = {
             x: e.clientX - position.x,
             y: e.clientY - position.y
         };
-        e.preventDefault();
     };
 
-    const handleMouseMove = (e: React.MouseEvent) => {
+    const handleTouchStart = (e: React.TouchEvent) => {
+        if (orbRef.current) {
+            orbRef.current.style.transition = 'none';
+        }
+        wasDraggedRef.current = false;
+        setIsDragging(true);
+        const touch = e.touches[0];
+        dragStartPos.current = {
+            x: touch.clientX - position.x,
+            y: touch.clientY - position.y
+        };
+    };
+
+
+    const handleMouseMove = (e: MouseEvent) => {
         if (!isDragging) return;
         wasDraggedRef.current = true;
-        const newX = e.clientX - dragStartPos.current.x;
-        const newY = e.clientY - dragStartPos.current.y;
+        const newX = Math.max(0, Math.min(window.innerWidth - 64, e.clientX - dragStartPos.current.x));
+        const newY = Math.max(0, Math.min(window.innerHeight - 64, e.clientY - dragStartPos.current.y));
+        setPosition({ x: newX, y: newY });
+    };
+    
+    const handleTouchMove = (e: TouchEvent) => {
+        if (!isDragging) return;
+        wasDraggedRef.current = true;
+        const touch = e.touches[0];
+        const newX = Math.max(0, Math.min(window.innerWidth - 64, touch.clientX - dragStartPos.current.x));
+        const newY = Math.max(0, Math.min(window.innerHeight - 64, touch.clientY - dragStartPos.current.y));
         setPosition({ x: newX, y: newY });
     };
 
     const handleMouseUp = () => {
+        if (orbRef.current) {
+            orbRef.current.style.transition = ''; // Reset to use CSS class
+        }
+        setIsDragging(false);
+    };
+
+    const handleTouchEnd = () => {
+        if (orbRef.current) {
+            orbRef.current.style.transition = '';
+        }
         setIsDragging(false);
     };
 
     useEffect(() => {
         if (isDragging) {
-            const moveHandler = (e: MouseEvent) => handleMouseMove(e as any);
+            const moveHandler = (e: MouseEvent) => handleMouseMove(e);
             const upHandler = () => handleMouseUp();
+            const touchMoveHandler = (e: TouchEvent) => handleTouchMove(e);
+            const touchEndHandler = () => handleTouchEnd();
+    
             window.addEventListener('mousemove', moveHandler);
             window.addEventListener('mouseup', upHandler);
+            window.addEventListener('touchmove', touchMoveHandler);
+            window.addEventListener('touchend', touchEndHandler);
+            
             return () => {
                 window.removeEventListener('mousemove', moveHandler);
                 window.removeEventListener('mouseup', upHandler);
+                window.removeEventListener('touchmove', touchMoveHandler);
+                window.removeEventListener('touchend', touchEndHandler);
             };
         }
     }, [isDragging]);
@@ -387,27 +888,29 @@ const AIAssistant: FC<{ showToast: (message: string) => void }> = ({ showToast }
         <>
             {/* Orb */}
             <div
-                style={{ left: `${position.x}px`, top: `${position.y}px` }}
-                className={`fixed z-30 w-16 h-16 rounded-full cursor-pointer transition-all duration-300 flex items-center justify-center shadow-lg hover:shadow-2xl ${isDragging ? 'scale-110' : 'hover:scale-110'}`}
+                ref={orbRef}
+                style={{ transform: `translate(${position.x}px, ${position.y}px)` }}
+                className={`fixed top-0 left-0 z-30 w-16 h-16 rounded-full flex items-center justify-center shadow-lg hover:shadow-2xl transition-transform duration-300 ${isDragging ? 'scale-110 cursor-grabbing' : 'hover:scale-110 cursor-grab'}`}
                 onMouseDown={handleMouseDown}
+                onTouchStart={handleTouchStart}
                 onClick={() => !wasDraggedRef.current && setIsOpen(true)}
             >
-                <div className="absolute inset-0 bg-gradient-to-br from-pink-400 to-rose-500 rounded-full animate-pulse"></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-pink-400 to-rose-500 rounded-full animate-gentle-pulse"></div>
                 <div className="absolute inset-1 bg-white/30 backdrop-blur-sm rounded-full"></div>
-                <BotIcon className="w-8 h-8 text-white relative" />
+                <BotMessageSquareIcon className="w-8 h-8 text-white relative" />
             </div>
 
             {/* Window */}
             {isOpen && (
                  <div className="fixed inset-0 bg-black/30 z-40 flex justify-center items-center p-4">
-                     <div className="w-full max-w-lg h-[80vh] max-h-[700px] bg-white/50 backdrop-blur-xl rounded-2xl shadow-2xl border border-pink-200/50 flex flex-col animate-slide-in">
+                     <div className="w-full max-w-lg h-[80vh] max-h-[700px] bg-white/50 backdrop-blur-xl rounded-3xl shadow-2xl border border-pink-200/50 flex flex-col animate-slide-in">
                          {/* Header */}
                          <div className="p-4 border-b border-pink-200/50 flex justify-between items-center">
                              <div className="flex items-center gap-3">
                                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center">
-                                     <BotIcon className="w-5 h-5 text-white"/>
+                                     <BotMessageSquareIcon className="w-5 h-5 text-white"/>
                                  </div>
-                                 <h2 className="text-xl font-bold text-rose-800">IV.IA Assistant</h2>
+                                 <h2 className="text-xl font-bold text-rose-800">{isMaleTheme ? 'Assistente Rob' : 'Assistente Rebeca'}</h2>
                              </div>
                              <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-800 text-2xl font-bold">&times;</button>
                          </div>
@@ -461,21 +964,116 @@ const AIAssistant: FC<{ showToast: (message: string) => void }> = ({ showToast }
     );
 };
 
+// --- SYNC MANAGER ---
+const SyncManager: FC<{ showToast: (message: string) => void }> = ({ showToast }) => {
+  const { actionQueue, clearActionQueue } = useData();
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
+
+  const pendingChanges = actionQueue.length;
+
+  const handleSync = () => {
+    if (pendingChanges === 0) {
+      showToast("Não há alterações para sincronizar.");
+      return;
+    }
+
+    setSyncStatus('syncing');
+    showToast(`Sincronizando ${pendingChanges} alterações...`);
+
+    // Simulate network request to a backend (e.g., PocketBase)
+    setTimeout(() => {
+      // In a real app, you would send `actionQueue` to the server here.
+      // If the server-side update is successful, then you clear the queue.
+      console.log("Simulating sync for actions:", actionQueue);
+      clearActionQueue();
+      setSyncStatus('success');
+      showToast("Sincronização concluída com sucesso!");
+
+      // Reset status after a while
+      setTimeout(() => setSyncStatus('idle'), 3000);
+    }, 2000);
+  };
+
+  if (pendingChanges === 0 && syncStatus === 'idle') {
+      return null; // Don't show the button if there are no pending changes and not in a success state
+  }
+
+  const buttonContent = () => {
+    switch(syncStatus) {
+      case 'syncing':
+        return (
+          <>
+            <RefreshCwIcon className="w-5 h-5 mr-2 animate-spin" />
+            Sincronizando...
+          </>
+        );
+      case 'success':
+         return (
+          <>
+            <ShieldIcon className="w-5 h-5 mr-2" />
+            Sincronizado!
+          </>
+        );
+      default:
+        return (
+          <>
+            <RefreshCwIcon className="w-5 h-5 mr-2" />
+            Sincronizar ({pendingChanges})
+          </>
+        );
+    }
+  };
+
+  return (
+    <div className="fixed bottom-6 right-6 z-20">
+      <Button 
+        onClick={handleSync} 
+        disabled={syncStatus === 'syncing'}
+        variant={syncStatus === 'success' ? 'secondary' : 'primary'}
+        className="!py-3 !px-6 !rounded-2xl !text-base shadow-lg animate-gentle-pulse"
+      >
+        {buttonContent()}
+      </Button>
+    </div>
+  );
+};
+
+
 // --- BACKUP RESTORE MODAL ---
 const BackupRestoreModal: FC<{isOpen: boolean; onClose: () => void; showToast: (msg: string) => void}> = ({isOpen, onClose, showToast}) => {
+    const { users } = useAuth();
     const { getRawData, loadRawData } = useData();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [selectedUserForBackup, setSelectedUserForBackup] = useState('');
+    const [selectedUserForRestore, setSelectedUserForRestore] = useState('');
+
 
     const handleBackup = () => {
-        try {
-            const data = getRawData();
+        if (!selectedUserForBackup) {
+            showToast('Por favor, selecione um usuário para o backup.');
+            return;
+        }
+        // This is tricky as data is now scoped per user in the context.
+        // A better approach would be for the admin to get any user's data.
+        // For now, let's assume getRawData is for the currently logged-in user.
+        // A full implementation requires passing userId to getRawData.
+        // Let's implement a temporary direct localStorage access for admins
+         try {
+            const clients = JSON.parse(localStorage.getItem(`clients_${selectedUserForBackup}`) || '[]');
+            const stockItems = JSON.parse(localStorage.getItem(`stockItems_${selectedUserForBackup}`) || '[]');
+            const sales = JSON.parse(localStorage.getItem(`sales_${selectedUserForBackup}`) || '[]');
+            const payments = JSON.parse(localStorage.getItem(`payments_${selectedUserForBackup}`) || '[]');
+            const actionQueue = JSON.parse(localStorage.getItem(`action_queue_${selectedUserForBackup}`) || '[]');
+            const data = { clients, stockItems, sales, payments, actionQueue };
+            
             const jsonString = JSON.stringify(data, null, 2);
             const blob = new Blob([jsonString], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
             const date = new Date().toISOString().split('T')[0];
-            a.download = `backup-vendas-ivone-${date}.json`;
+            const user = users.find(u => u.id === selectedUserForBackup);
+            a.download = `backup-vendas-${user?.username || 'desconhecido'}-${date}.json`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -495,7 +1093,13 @@ const BackupRestoreModal: FC<{isOpen: boolean; onClose: () => void; showToast: (
         const file = event.target.files?.[0];
         if (!file) return;
 
-        if (window.confirm('Tem certeza que deseja restaurar os dados? TODOS os dados atuais serão substituídos por este backup. Esta ação não pode ser desfeita.')) {
+        if (!selectedUserForRestore) {
+            showToast('Por favor, selecione um usuário para restaurar os dados.');
+            if(fileInputRef.current) fileInputRef.current.value = "";
+            return;
+        }
+
+        if (window.confirm(`Tem certeza que deseja restaurar os dados para o usuário ${users.find(u=>u.id === selectedUserForRestore)?.username}? TODOS os dados atuais DESTE USUÁRIO serão substituídos. Esta ação não pode ser desfeita.`)) {
             const reader = new FileReader();
             reader.onload = (e) => {
                 try {
@@ -504,12 +1108,20 @@ const BackupRestoreModal: FC<{isOpen: boolean; onClose: () => void; showToast: (
                        throw new Error("Não foi possível ler o arquivo.");
                     }
                     const data = JSON.parse(text);
-                    loadRawData(data);
-                    showToast('Dados restaurados com sucesso!');
-                    onClose();
-                } catch (error) {
+                     if (data && Array.isArray(data.clients) && Array.isArray(data.stockItems) && Array.isArray(data.sales) && Array.isArray(data.payments)) {
+                        localStorage.setItem(`clients_${selectedUserForRestore}`, JSON.stringify(data.clients));
+                        localStorage.setItem(`stockItems_${selectedUserForRestore}`, JSON.stringify(data.stockItems));
+                        localStorage.setItem(`sales_${selectedUserForRestore}`, JSON.stringify(data.sales));
+                        localStorage.setItem(`payments_${selectedUserForRestore}`, JSON.stringify(data.payments));
+                        localStorage.setItem(`action_queue_${selectedUserForRestore}`, JSON.stringify(data.actionQueue || []));
+                        showToast(`Dados para ${users.find(u=>u.id === selectedUserForRestore)?.username} restaurados com sucesso!`);
+                        onClose();
+                     } else {
+                        throw new Error("Arquivo de backup inválido ou corrompido.");
+                     }
+                } catch (error: any) {
                     console.error("Erro ao restaurar backup:", error);
-                    showToast('Erro ao restaurar. O arquivo pode estar corrompido.');
+                    showToast(`Erro ao restaurar: ${error.message}`);
                 }
             };
             reader.readAsText(file);
@@ -523,16 +1135,28 @@ const BackupRestoreModal: FC<{isOpen: boolean; onClose: () => void; showToast: (
             <div className="space-y-6">
                 <div>
                     <h3 className="font-bold text-lg text-gray-700 mb-2">Fazer Backup</h3>
-                    <p className="text-sm text-gray-600 mb-4">Salve todos os seus dados (clientes, vendas, estoque e pagamentos) em um arquivo seguro no seu computador. Faça isso regularmente!</p>
-                    <Button onClick={handleBackup}>Baixar Arquivo de Backup</Button>
+                    <p className="text-sm text-gray-600 mb-4">Salve todos os dados de um usuário específico em um arquivo seguro no seu computador.</p>
+                    <div className="space-y-4">
+                        <Select label="Usuário para Backup" id="user-backup" value={selectedUserForBackup} onChange={e => setSelectedUserForBackup(e.target.value)}>
+                            <option value="">Selecione um usuário...</option>
+                            {users.map(user => <option key={user.id} value={user.id}>{user.username}</option>)}
+                        </Select>
+                        <Button onClick={handleBackup} disabled={!selectedUserForBackup}>Baixar Arquivo de Backup</Button>
+                    </div>
                 </div>
                 <div className="border-t pt-6">
                     <h3 className="font-bold text-lg text-gray-700 mb-2">Restaurar de um Arquivo</h3>
-                    <p className="text-sm text-gray-600 mb-4">Recupere seus dados a partir de um arquivo de backup que você salvou anteriormente. </p>
-                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm mb-4">
-                       <span className="font-bold">Atenção:</span> Isso substituirá TODOS os dados atuais no aplicativo.
+                    <p className="text-sm text-gray-600 mb-4">Recupere os dados de um usuário a partir de um arquivo de backup que você salvou.</p>
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm mb-4">
+                       <span className="font-bold">Atenção:</span> Isso substituirá TODOS os dados do usuário selecionado.
                     </div>
-                    <Button onClick={handleRestoreClick} variant="secondary">Restaurar de um Arquivo</Button>
+                    <div className="space-y-4">
+                        <Select label="Restaurar para o Usuário" id="user-restore" value={selectedUserForRestore} onChange={e => setSelectedUserForRestore(e.target.value)}>
+                            <option value="">Selecione um usuário...</option>
+                            {users.map(user => <option key={user.id} value={user.id}>{user.username}</option>)}
+                        </Select>
+                        <Button onClick={handleRestoreClick} variant="secondary" disabled={!selectedUserForRestore}>Selecionar Arquivo para Restaurar</Button>
+                    </div>
                     <input type="file" accept=".json" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
                 </div>
             </div>
@@ -607,23 +1231,27 @@ const HeaderSummary: FC<{ setActiveView: (view: View) => void }> = ({ setActiveV
     const totalPending = totalSalesValue - totalReceived;
 
     const summaryItems = [
-        { title: 'Clientes', value: clients.length, icon: UsersIcon, view: 'clients' },
-        { title: 'Vendas', value: totalSalesValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), icon: TrendingUpIcon, view: 'all_sales' },
-        { title: 'Recebimentos', value: totalReceived.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), icon: WalletIcon, view: 'all_payments' },
-        { title: 'Pendente', value: totalPending.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), icon: ClockIcon, view: 'pending_payments' },
+        { title: 'Clientes', value: clients.length, icon: UsersIcon, view: 'clients', color: 'from-purple-400 to-pink-400' },
+        { title: 'Vendas', value: totalSalesValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), icon: TrendingUpIcon, view: 'all_sales', color: 'from-pink-400 to-rose-400' },
+        { title: 'Recebidos', value: totalReceived.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), icon: WalletIcon, view: 'all_payments', color: 'from-emerald-400 to-green-400' },
+        { title: 'Pendente', value: totalPending.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), icon: ClockIcon, view: 'pending_payments', color: 'from-amber-400 to-orange-400' },
     ];
 
     return (
-        <div className="bg-gradient-to-r from-pink-500 to-rose-400 p-2 md:p-4 shadow-lg">
-             <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4 max-w-7xl mx-auto">
+        <div className="bg-white/60 backdrop-blur-md p-2 shadow-lg">
+             <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 max-w-7xl mx-auto">
                  {summaryItems.map(item => (
-                    <div key={item.title} onClick={() => setActiveView(item.view as View)} className="p-2 flex items-center bg-white/20 backdrop-blur-sm rounded-xl shadow-md cursor-pointer hover:bg-white/30 transform hover:scale-105 transition-all duration-300">
-                        <div className="p-2 rounded-full mr-3 text-pink-500 bg-white/90 shadow-inner">
-                            <item.icon className="w-5 h-5 md:w-6 md:h-6" />
+                    <div 
+                        key={item.title} 
+                        onClick={() => setActiveView(item.view as View)} 
+                        className={`p-3 flex items-center bg-gradient-to-br ${item.color} rounded-2xl shadow-md text-white cursor-pointer hover:shadow-lg transform hover:scale-105 transition-all duration-300`}
+                    >
+                        <div className="p-2 rounded-full mr-2 bg-white/20">
+                            <item.icon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                         </div>
                         <div>
-                            <p className="text-xs md:text-sm text-rose-100 font-medium">{item.title}</p>
-                            <p className="text-base md:text-xl font-bold text-white">{item.value}</p>
+                            <p className="text-[10px] sm:text-xs font-medium [text-shadow:1px_1px_2px_rgba(0,0,0,0.3)]">{item.title}</p>
+                            <p className="text-sm sm:text-base font-bold [text-shadow:1px_1px_2px_rgba(0,0,0,0.3)]">{item.value}</p>
                         </div>
                     </div>
                  ))}
@@ -649,18 +1277,18 @@ const Dashboard: FC<{ onNavigate: (view: View, clientId?: string) => void; }> = 
                 <h2 className="text-xl font-bold text-rose-800 mb-1">Ações Rápidas</h2>
                 <p className="text-gray-500 text-sm mb-4">Comece por aqui para as tarefas mais comuns.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <button onClick={() => onNavigate('add_sale')} className="p-6 bg-gradient-to-br from-pink-50 to-rose-100 border-2 border-rose-200 rounded-xl flex items-center space-x-4 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                        <ShoppingCartIcon className="w-10 h-10 text-rose-500" />
+                    <button onClick={() => onNavigate('add_sale')} className="p-4 bg-gradient-to-br from-pink-50 to-rose-100 border-2 border-rose-200 rounded-2xl flex items-center text-left space-x-4 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+                        <ShoppingCartIcon className="w-8 h-8 text-rose-500 flex-shrink-0" />
                         <div>
-                            <h3 className="text-lg font-bold text-gray-800 text-left">Nova Venda</h3>
-                            <p className="text-gray-600 text-left">Registrar uma nova venda para uma cliente.</p>
+                            <h3 className="text-base font-bold text-gray-800">Nova Venda</h3>
+                            <p className="text-gray-600 text-xs sm:text-sm">Registrar uma nova venda.</p>
                         </div>
                     </button>
-                    <button onClick={() => onNavigate('add_payment')} className="p-6 bg-gradient-to-br from-emerald-50 to-green-100 border-2 border-green-200 rounded-xl flex items-center space-x-4 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                        <CreditCardIcon className="w-10 h-10 text-emerald-500" />
+                    <button onClick={() => onNavigate('add_payment')} className="p-4 bg-gradient-to-br from-emerald-50 to-green-100 border-2 border-green-200 rounded-2xl flex items-center text-left space-x-4 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+                        <CreditCardIcon className="w-8 h-8 text-emerald-500 flex-shrink-0" />
                         <div>
-                            <h3 className="text-lg font-bold text-gray-800 text-left">Receber Pagamento</h3>
-                            <p className="text-gray-600 text-left">Registrar um pagamento recebido.</p>
+                            <h3 className="text-base font-bold text-gray-800">Receber Pagamento</h3>
+                            <p className="text-gray-600 text-xs sm:text-sm">Registrar um pagamento.</p>
                         </div>
                     </button>
                 </div>
@@ -711,7 +1339,7 @@ const AllSales: FC<{ onEditSale: (sale: Sale) => void; showToast: (msg: string) 
                 {sortedSales.length > 0 ? sortedSales.map(sale => {
                      const client = getClientById(sale.clientId);
                      return (
-                        <div key={sale.id} className="p-4 bg-rose-50 border border-rose-100 rounded-lg flex justify-between items-center">
+                        <div key={sale.id} className="p-4 bg-rose-50 border border-rose-100 rounded-2xl flex justify-between items-center">
                             <div className="flex-grow">
                                 <p className="font-bold text-gray-700">Venda para {client?.fullName || 'Cliente não encontrado'}</p>
                                 <p className="text-sm text-gray-600">{sale.quantity}x {sale.productName}</p>
@@ -753,7 +1381,7 @@ const AllPayments: FC<{ onEditPayment: (payment: Payment) => void; showToast: (m
                  {sortedPayments.length > 0 ? sortedPayments.map(payment => {
                     const client = getClientById(payment.clientId);
                     return (
-                        <div key={payment.id} className="p-4 bg-emerald-50 border border-emerald-100 rounded-lg flex justify-between items-center">
+                        <div key={payment.id} className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex justify-between items-center">
                             <div>
                                 <p className="font-bold text-gray-700">Pagamento de {client?.fullName || 'Cliente não encontrado'}</p>
                                 <p className="text-xs text-gray-500">{new Date(payment.paymentDate).toLocaleDateString('pt-BR')}</p>
@@ -791,9 +1419,9 @@ const PendingPayments: FC<{onViewClient: (clientId: string) => void;}> = ({onVie
                     <table className="w-full text-left">
                         <thead>
                             <tr className="bg-pink-100/70 text-pink-800 font-semibold uppercase text-sm">
-                                <th className="p-3 rounded-l-lg">Cliente</th>
+                                <th className="p-3 rounded-l-2xl">Cliente</th>
                                 <th className="p-3">Telefone</th>
-                                <th className="p-3 text-right rounded-r-lg">Valor Pendente</th>
+                                <th className="p-3 text-right rounded-r-2xl">Valor Pendente</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -903,11 +1531,11 @@ const ManageClients: FC<{ setActiveView: (view: View) => void; onViewClient: (cl
                      <table className="w-full text-left">
                         <thead className="bg-pink-100/70 text-pink-800 font-semibold uppercase text-sm">
                             <tr>
-                                <th className="p-3 rounded-l-lg">Nome</th>
+                                <th className="p-3 rounded-l-2xl">Nome</th>
                                 <th className="p-3 hidden md:table-cell">Telefone</th>
                                 <th className="p-3">Status</th>
                                 <th className="p-3 hidden lg:table-cell">E-mail</th>
-                                <th className="p-3 rounded-r-lg text-right">Ações</th>
+                                <th className="p-3 rounded-r-2xl text-right">Ações</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1020,11 +1648,11 @@ const StockManager: FC = () => {
                         <table className="w-full text-left">
                              <thead className="bg-pink-100/70 text-pink-800 font-semibold uppercase text-sm">
                                 <tr>
-                                    <th className="p-3 rounded-l-lg">Produto</th>
+                                    <th className="p-3 rounded-l-2xl">Produto</th>
                                     <th className="p-3 hidden sm:table-cell">Tamanho</th>
                                     <th className="p-3">Código</th>
                                     <th className="p-3">Quantidade</th>
-                                    <th className="p-3 rounded-r-lg">Ações</th>
+                                    <th className="p-3 rounded-r-2xl">Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1040,7 +1668,7 @@ const StockManager: FC = () => {
                                                     value={editingQuantities[item.id] ?? item.quantity}
                                                     onChange={(e) => handleQuantityChange(item.id, e.target.value)}
                                                     onBlur={() => handleUpdateQuantity(item.id)}
-                                                    className="w-20 px-2 py-1 border rounded-md focus:ring-pink-400 focus:border-pink-400"
+                                                    className="w-20 px-2 py-1 border rounded-xl focus:ring-pink-400 focus:border-pink-400"
                                                 />
                                             </div>
                                         </td>
@@ -1174,7 +1802,7 @@ const SaleForm: FC<{ editingSale?: Sale | null; onSaleSuccess: (sale: Sale, isEd
                     />
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Valor Total</label>
-                        <p className="w-full px-3 py-2 border bg-gray-100 border-gray-300 rounded-lg font-bold text-lg text-pink-600">{total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                        <p className="w-full px-3 py-2 border bg-gray-100 border-gray-300 rounded-xl font-bold text-lg text-pink-600">{total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
                     </div>
                 </div>
                 <TextArea label="Observação" name="observation" value={saleData.observation} onChange={handleChange} />
@@ -1262,7 +1890,7 @@ const PaymentForm: FC<{
                     {clients.map(c => <option key={c.id} value={c.id}>{c.fullName}</option>)}
                 </Select>
                 {selectedClientBalance !== null && (
-                    <div className={`p-3 rounded-lg text-center ${selectedClientBalance > 0 ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+                    <div className={`p-3 rounded-xl text-center ${selectedClientBalance > 0 ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
                         Saldo devedor atual: <span className="font-bold">{selectedClientBalance.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}</span>
                     </div>
                 )}
@@ -1343,7 +1971,7 @@ const Reports: FC = () => {
                         <h2 className="text-xl font-bold text-rose-800 mb-4">Top 5 Clientes (por valor de compra) 🏆</h2>
                         <ul className="space-y-3">
                             {topClients.map(({ client, total }, index) => (
-                                <li key={client?.id || index} className="flex justify-between items-center p-3 bg-rose-50 rounded-lg border border-rose-100">
+                                <li key={client?.id || index} className="flex justify-between items-center p-3 bg-rose-50 rounded-xl border border-rose-100">
                                     <span className="font-medium text-gray-700">{index + 1}. {client?.fullName || 'Cliente Removido'}</span>
                                     <span className="font-bold text-rose-600">{total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
                                 </li>
@@ -1354,7 +1982,7 @@ const Reports: FC = () => {
                         <h2 className="text-xl font-bold text-rose-800 mb-4">Top 5 Produtos (por quantidade vendida) ⭐</h2>
                          <ul className="space-y-3">
                             {topProducts.map(({ productName, quantity }, index) => (
-                                <li key={productName} className="flex justify-between items-center p-3 bg-rose-50 rounded-lg border border-rose-100">
+                                <li key={productName} className="flex justify-between items-center p-3 bg-rose-50 rounded-xl border border-rose-100">
                                     <span className="font-medium text-gray-700">{index + 1}. {productName}</span>
                                     <span className="font-bold text-rose-600">{quantity} unidades</span>
                                 </li>
@@ -1399,7 +2027,7 @@ const History: FC = () => {
                         const client = getClientById(tx.clientId);
                         if (tx.type === 'sale') {
                             return (
-                                <div key={`sale-${tx.id}`} className="p-4 bg-rose-50 border border-rose-100 rounded-lg flex justify-between items-start">
+                                <div key={`sale-${tx.id}`} className="p-4 bg-rose-50 border border-rose-100 rounded-2xl flex justify-between items-start">
                                     <div>
                                         <p className="font-bold text-gray-700">Venda para {client?.fullName || 'Cliente Removido'}</p>
                                         <p className="text-sm text-gray-600">{tx.quantity}x {tx.productName}</p>
@@ -1410,7 +2038,7 @@ const History: FC = () => {
                             )
                         } else {
                             return (
-                                 <div key={`payment-${tx.id}`} className="p-4 bg-emerald-50 border border-emerald-100 rounded-lg flex justify-between items-start">
+                                 <div key={`payment-${tx.id}`} className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex justify-between items-start">
                                     <div>
                                         <p className="font-bold text-gray-700">Pagamento de {client?.fullName || 'Cliente Removido'}</p>
                                         <p className="text-xs text-gray-500">{new Date(tx.paymentDate).toLocaleDateString('pt-BR')}</p>
@@ -1484,7 +2112,7 @@ const ClientDetail: FC<{ clientId: string; onNavigate: (view: View, clientId?: s
                     <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2">
                         {transactions.map(tx => (
                             tx.type === 'sale' ? (
-                                <div key={`sale-${tx.id}`} className="p-3 bg-rose-50 border border-rose-100 rounded-lg flex justify-between items-center">
+                                <div key={`sale-${tx.id}`} className="p-3 bg-rose-50 border border-rose-100 rounded-xl flex justify-between items-center">
                                     <div>
                                         <p className="font-semibold text-gray-800">{tx.productName} (x{tx.quantity})</p>
                                         <p className="text-xs text-gray-500">{new Date(tx.saleDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
@@ -1492,7 +2120,7 @@ const ClientDetail: FC<{ clientId: string; onNavigate: (view: View, clientId?: s
                                     <p className="font-bold text-rose-600">-{tx.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
                                 </div>
                             ) : (
-                                <div key={`payment-${tx.id}`} className="p-3 bg-emerald-50 border border-emerald-100 rounded-lg flex justify-between items-center">
+                                <div key={`payment-${tx.id}`} className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex justify-between items-center">
                                     <div>
                                         <p className="font-semibold text-gray-800">Pagamento Recebido</p>
                                         <p className="text-xs text-gray-500">{new Date(tx.paymentDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}</p>

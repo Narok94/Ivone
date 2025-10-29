@@ -1,9 +1,10 @@
+import { useState, useEffect } from 'react';
 
-import { useState, useEffect, Dispatch, SetStateAction } from 'react';
-
-// FIX: Use Dispatch and SetStateAction types directly instead of React.Dispatch and React.SetStateAction
-function useLocalStorage<T,>(key: string, initialValue: T): [T, Dispatch<SetStateAction<T>>] {
+function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val: T) => T)) => void] {
   const [storedValue, setStoredValue] = useState<T>(() => {
+    if (typeof window === 'undefined') {
+      return initialValue;
+    }
     try {
       const item = window.localStorage.getItem(key);
       return item ? JSON.parse(item) : initialValue;
@@ -13,27 +14,45 @@ function useLocalStorage<T,>(key: string, initialValue: T): [T, Dispatch<SetStat
     }
   });
 
-  // FIX: Use Dispatch and SetStateAction types directly instead of React.Dispatch and React.SetStateAction
-  const setValue: Dispatch<SetStateAction<T>> = (value) => {
+  const setValue = (value: T | ((val: T) => T)) => {
     try {
       const valueToStore = value instanceof Function ? value(storedValue) : value;
       setStoredValue(valueToStore);
-      window.localStorage.setItem(key, JSON.stringify(valueToStore));
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(key, JSON.stringify(valueToStore));
+      }
     } catch (error) {
       console.error(error);
     }
   };
-
+  
   useEffect(() => {
-    try {
-        const item = window.localStorage.getItem(key);
-        if (item) {
-            setStoredValue(JSON.parse(item));
+    const handleStorageChange = (e: StorageEvent) => {
+        if (e.key === key) {
+            try {
+                setStoredValue(e.newValue ? JSON.parse(e.newValue) : initialValue);
+            } catch (error) {
+                console.error(error);
+                setStoredValue(initialValue);
+            }
         }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    // When the key changes (e.g., user logs in/out), re-read from localStorage
+    try {
+      const item = window.localStorage.getItem(key);
+      setStoredValue(item ? JSON.parse(item) : initialValue);
     } catch (error) {
-        console.error(error);
+      console.error(error);
+      setStoredValue(initialValue);
     }
-  }, [key]);
+
+    return () => {
+        window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [key, initialValue]);
 
 
   return [storedValue, setValue];

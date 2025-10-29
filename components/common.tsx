@@ -8,7 +8,7 @@ interface CardProps {
 
 export const Card: React.FC<CardProps> = ({ children, className = '', onClick }) => (
   <div 
-    className={`bg-white/60 backdrop-blur-md rounded-2xl shadow-md border border-pink-100 p-6 transition-all duration-300 ${className} ${onClick ? 'cursor-pointer hover:shadow-xl hover:-translate-y-1' : ''}`}
+    className={`bg-white/60 backdrop-blur-md rounded-3xl shadow-md border border-pink-100 p-6 transition-all duration-300 ${className} ${onClick ? 'cursor-pointer hover:shadow-xl hover:-translate-y-1' : ''}`}
     onClick={onClick}
   >
     {children}
@@ -44,7 +44,7 @@ export const Input: React.FC<InputProps> = ({ label, id, ...props }) => (
     <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
     <input
       id={id}
-      className="w-full px-4 py-2 bg-white/70 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400 transition-shadow"
+      className="w-full px-4 py-2 bg-white/70 border border-gray-300 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400 transition-shadow text-gray-900"
       {...props}
     />
   </div>
@@ -60,7 +60,7 @@ export const TextArea: React.FC<TextAreaProps> = ({ label, id, ...props }) => (
     <textarea
       id={id}
       rows={3}
-      className="w-full px-4 py-2 bg-white/70 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400 transition-shadow"
+      className="w-full px-4 py-2 bg-white/70 border border-gray-300 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400 transition-shadow"
       {...props}
     ></textarea>
   </div>
@@ -76,7 +76,7 @@ export const Select: React.FC<SelectProps> = ({ label, id, children, ...props })
       <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
       <select
         id={id}
-        className="w-full px-4 py-2 border bg-white/70 border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400 transition-shadow"
+        className="w-full px-4 py-2 border bg-white/70 border-gray-300 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400 transition-shadow"
         {...props}
       >
         {children}
@@ -97,7 +97,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col border border-pink-200">
+      <div className="bg-white rounded-3xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col border border-pink-200">
         <div className="flex justify-between items-center p-4 border-b">
           <h2 className="text-xl font-bold text-pink-600">{title}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-800 text-2xl font-bold">&times;</button>
