@@ -1,5 +1,5 @@
 import React, { useState, useMemo, FC, useEffect, ReactNode, useRef } from 'react';
-import { GoogleGenAI, Chat } from "@google/genai";
+import { GoogleGenAI, Chat, Modality } from "@google/genai";
 import { useData } from './contexto/DataContext';
 import { Client, StockItem, Sale, Payment, User } from './types';
 import { Card, Button, Input, Modal, TextArea, Select } from './components/common';
@@ -33,6 +33,15 @@ const DogIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://w
 const CatIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 5c.67 0 1.35.09 2 .26 1.78.47 2.94 2.13 2.5 3.92A4.015 4.015 0 0 1 12 10c-.67 0-1.35-.09-2-.26-1.78-.47-2.94-2.13-2.5-3.92A4.015 4.015 0 0 1 12 5Z"/><path d="M19.62 9.24c.32.44.58.93.78 1.46 1.34 3.54-1.26 7.3-4.4 7.3h-1c-1.33 0-2.5 .54-3.34 1.34-1.34 1.34-3.56 1.34-4.89 0-1.34-1.34-1.34-3.56 0-4.89 1.33-1.33 3.55-1.33 4.88 0A4.015 4.015 0 0 1 12 18c2.4 0 4.1-1.68 4.7-4 .37-1.42.3-2.82-.2-4.1-.17-.42-.38-.83-.62-1.22"/><path d="M18 10a1 1 0 1 0-2 0"/><path d="M6 10a1 1 0 1 0-2 0"/></svg>);
 const MenuIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>);
 const RefreshCwIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 2v6h6"/><path d="M21 12A9 9 0 0 0 6 5.3L3 8"/><path d="M21 22v-6h-6"/><path d="M3 12a9 9 0 0 0 15 6.7l3-2.7"/></svg>);
+
+const CleanMagicIcon: FC<{className?: string}> = ({className}) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className={className}>
+        <path d="M21 12a9 9 0 1 1-9-9" strokeLinecap="round"/>
+        <path d="M12 5.5L14.5 10.5L12 15.5L9.5 10.5L12 5.5Z" fill="currentColor" stroke="none" />
+        <path d="M18 4L19 6L18 8L17 6L18 4Z" fill="currentColor" stroke="none" />
+        <path d="M20.5 8L21.5 10L20.5 12L19.5 10L20.5 8Z" fill="currentColor" stroke="none" />
+    </svg>
+);
 
 
 // --- VIEWS & FORMS (defined globally to be used by both layouts) ---
@@ -634,6 +643,36 @@ const ManageUsers: FC<{showToast: (msg: string) => void;}> = ({ showToast }) => 
     );
 };
 
+// --- AUDIO HELPERS ---
+function decode(base64: string) {
+  const binaryString = atob(base64);
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+}
+
+async function decodeAudioData(
+  data: Uint8Array,
+  ctx: AudioContext,
+  sampleRate: number,
+  numChannels: number,
+): Promise<AudioBuffer> {
+  const dataInt16 = new Int16Array(data.buffer);
+  const frameCount = dataInt16.length / numChannels;
+  const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
+
+  for (let channel = 0; channel < numChannels; channel++) {
+    const channelData = buffer.getChannelData(channel);
+    for (let i = 0; i < frameCount; i++) {
+      channelData[i] = dataInt16[i * numChannels + channel] / 32768.0;
+    }
+  }
+  return buffer;
+}
+
 
 // --- AI ASSISTANT ---
 const AIAssistant: FC<{ showToast: (message: string) => void }> = ({ showToast }) => {
@@ -652,12 +691,71 @@ const AIAssistant: FC<{ showToast: (message: string) => void }> = ({ showToast }
     const chatRef = useRef<Chat | null>(null);
     const recognitionRef = useRef<any>(null);
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
+    const audioCtxRef = useRef<AudioContext | null>(null);
+    const lastPlayedMessageRef = useRef<ReactNode | null>(null);
+
 
     const isMaleTheme = currentUser?.gender === 'male';
 
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
+        if (!audioCtxRef.current) {
+            audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+        }
+    }, []);
+
+    const textToSpeechAndPlay = async (text: string) => {
+        if (!process.env.API_KEY || !audioCtxRef.current || !text) return;
+        
+        setIsLoading(true);
+        try {
+            if (audioCtxRef.current.state === 'suspended') {
+                await audioCtxRef.current.resume();
+            }
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const response = await ai.models.generateContent({
+                model: "gemini-2.5-flash-preview-tts",
+                contents: [{ parts: [{ text }] }],
+                config: {
+                    responseModalities: [Modality.AUDIO],
+                    speechConfig: {
+                        voiceConfig: {
+                          prebuiltVoiceConfig: { voiceName: 'Kore' },
+                        },
+                    },
+                },
+            });
+            const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+            if (base64Audio && audioCtxRef.current) {
+                const audioData = decode(base64Audio);
+                const audioBuffer = await decodeAudioData(audioData, audioCtxRef.current, 24000, 1);
+                const source = audioCtxRef.current.createBufferSource();
+                source.buffer = audioBuffer;
+                source.connect(audioCtxRef.current.destination);
+                source.start();
+            }
+        } catch (error) {
+            console.error("TTS Error:", error);
+            showToast("Desculpe, tive um problema com minha voz.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    useEffect(() => {
+        // Scroll to bottom when new messages are added and the window is open
+        if (isOpen) {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        const lastMessage = messages[messages.length - 1];
+        
+        // Play TTS only when the window is open for AI messages that haven't been played
+        if (isOpen && lastMessage && lastMessage.sender === 'ai' && typeof lastMessage.text === 'string' && lastMessage.text !== lastPlayedMessageRef.current) {
+            lastPlayedMessageRef.current = lastMessage.text;
+            textToSpeechAndPlay(lastMessage.text);
+        }
+    }, [messages, isOpen]);
+
 
     useEffect(() => {
         if (!process.env.API_KEY) {
@@ -896,9 +994,8 @@ const AIAssistant: FC<{ showToast: (message: string) => void }> = ({ showToast }
                 onTouchStart={handleTouchStart}
                 onClick={() => !wasDraggedRef.current && setIsOpen(true)}
             >
-                <div className="absolute inset-0 bg-gradient-to-br from-pink-400 to-rose-500 rounded-full animate-gentle-pulse"></div>
-                <div className="absolute inset-1 bg-white/30 backdrop-blur-sm rounded-full"></div>
-                <BotMessageSquareIcon className="w-8 h-8 text-white relative" />
+                <div className="absolute inset-0 rounded-full animate-gentle-pulse"></div>
+                <CleanMagicIcon className="w-10 h-10 text-pink-500 relative" />
             </div>
 
             {/* Window */}
