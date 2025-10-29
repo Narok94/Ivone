@@ -32,7 +32,6 @@ const KeyIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://w
 const DogIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M10 5.172C10 3.782 8.423 2.679 7.12 3.373A4 4 0 0 0 4.783 7.12C5.321 8.423 6.218 10 5.172 10H5a2 2 0 0 0-2 2v1a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-3a2 2 0 0 1 2-2h1.172c1.046 0 1.577-1.33 1.046-2.124A4.002 4.002 0 0 0 10 5.172Z"/><path d="M14 12a2 2 0 0 0-2-2h-2"/><path d="M16.63 12.87a2 2 0 1 1 2.24 2.24"/><path d="M18 16c-2 0-3-1-3-2V8a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1a2 2 0 0 0 2 2h1a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2.172c-1.046 0-1.577 1.33-1.046 2.124A4.002 4.002 0 0 1 18 16Z"/></svg>);
 const CatIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 5c.67 0 1.35.09 2 .26 1.78.47 2.94 2.13 2.5 3.92A4.015 4.015 0 0 1 12 10c-.67 0-1.35-.09-2-.26-1.78-.47-2.94-2.13-2.5-3.92A4.015 4.015 0 0 1 12 5Z"/><path d="M19.62 9.24c.32.44.58.93.78 1.46 1.34 3.54-1.26 7.3-4.4 7.3h-1c-1.33 0-2.5 .54-3.34 1.34-1.34 1.34-3.56 1.34-4.89 0-1.34-1.34-1.34-3.56 0-4.89 1.33-1.33 3.55-1.33 4.88 0A4.015 4.015 0 0 1 12 18c2.4 0 4.1-1.68 4.7-4 .37-1.42.3-2.82-.2-4.1-.17-.42-.38-.83-.62-1.22"/><path d="M18 10a1 1 0 1 0-2 0"/><path d="M6 10a1 1 0 1 0-2 0"/></svg>);
 const MenuIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>);
-const RefreshCwIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 2v6h6"/><path d="M21 12A9 9 0 0 0 6 5.3L3 8"/><path d="M21 22v-6h-6"/><path d="M3 12a9 9 0 0 0 15 6.7l3-2.7"/></svg>);
 
 const CleanMagicIcon: FC<{className?: string}> = ({className}) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className={className}>
@@ -310,7 +309,6 @@ const IvoneLayout: React.FC = () => {
       </main>
 
       <AIAssistant showToast={showToast} />
-      <SyncManager showToast={showToast} />
     </div>
   );
 };
@@ -454,7 +452,6 @@ const AdminLayout: FC = () => {
                     {renderView()}
                 </main>
             </div>
-            <SyncManager showToast={showToast} />
         </div>
     );
 }
@@ -693,7 +690,7 @@ const AIAssistant: FC<{ showToast: (message: string) => void }> = ({ showToast }
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
     const audioCtxRef = useRef<AudioContext | null>(null);
     const lastPlayedMessageRef = useRef<ReactNode | null>(null);
-
+    const [initialGreetingAudio, setInitialGreetingAudio] = useState<AudioBuffer | null>(null);
 
     const isMaleTheme = currentUser?.gender === 'male';
 
@@ -741,20 +738,65 @@ const AIAssistant: FC<{ showToast: (message: string) => void }> = ({ showToast }
         }
     };
     
+    const preloadGreetingAudio = async (text: string) => {
+        if (!process.env.API_KEY || !audioCtxRef.current || !text) return;
+        try {
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const response = await ai.models.generateContent({
+                model: "gemini-2.5-flash-preview-tts",
+                contents: [{ parts: [{ text }] }],
+                config: {
+                    responseModalities: [Modality.AUDIO],
+                    speechConfig: {
+                        voiceConfig: {
+                          prebuiltVoiceConfig: { voiceName: 'Kore' },
+                        },
+                    },
+                },
+            });
+            const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+            if (base64Audio && audioCtxRef.current) {
+                const audioData = decode(base64Audio);
+                const audioBuffer = await decodeAudioData(audioData, audioCtxRef.current, 24000, 1);
+                setInitialGreetingAudio(audioBuffer);
+            }
+        } catch (error) {
+            console.error("TTS Preload Error:", error);
+            // Fail silently, the audio will be generated on-demand if preload fails.
+        }
+    };
+
     useEffect(() => {
-        // Scroll to bottom when new messages are added and the window is open
         if (isOpen) {
             messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
         }
         
         const lastMessage = messages[messages.length - 1];
         
-        // Play TTS only when the window is open for AI messages that haven't been played
         if (isOpen && lastMessage && lastMessage.sender === 'ai' && typeof lastMessage.text === 'string' && lastMessage.text !== lastPlayedMessageRef.current) {
             lastPlayedMessageRef.current = lastMessage.text;
-            textToSpeechAndPlay(lastMessage.text);
+
+            // Check if it's the very first message and if we have pre-loaded audio
+            if (messages.length === 1 && initialGreetingAudio && audioCtxRef.current) {
+                try {
+                    if (audioCtxRef.current.state === 'suspended') {
+                         audioCtxRef.current.resume();
+                    }
+                    const source = audioCtxRef.current.createBufferSource();
+                    source.buffer = initialGreetingAudio;
+                    source.connect(audioCtxRef.current.destination);
+                    source.start();
+                } catch (e) {
+                    console.error("Error playing preloaded audio", e);
+                    // Fallback to generating it on the fly
+                    textToSpeechAndPlay(lastMessage.text);
+                }
+            } else {
+                // For all other messages, generate and play as before
+                textToSpeechAndPlay(lastMessage.text);
+            }
         }
-    }, [messages, isOpen]);
+    }, [messages, isOpen, initialGreetingAudio]);
 
 
     useEffect(() => {
@@ -780,6 +822,7 @@ const AIAssistant: FC<{ showToast: (message: string) => void }> = ({ showToast }
             : `Oii, ${currentUser?.username}! 💖 Aqui é a Rebeca, sua assistente pessoal, pronta para deixar tudo organizado! Vamos começar? Me conta, vamos cadastrar uma cliente super especial, lançar uma venda incrível ou registrar um pagamento? Tô prontíssima! ✨`;
 
         setMessages([{ sender: 'ai', text: initialMessage }]);
+        preloadGreetingAudio(initialMessage);
     }, [clients, isMaleTheme, currentUser]);
 
      useEffect(() => {
@@ -1062,81 +1105,6 @@ const AIAssistant: FC<{ showToast: (message: string) => void }> = ({ showToast }
     );
 };
 
-// --- SYNC MANAGER ---
-const SyncManager: FC<{ showToast: (message: string) => void }> = ({ showToast }) => {
-  const { actionQueue, clearActionQueue } = useData();
-  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
-
-  const pendingChanges = actionQueue.length;
-
-  const handleSync = () => {
-    if (pendingChanges === 0) {
-      showToast("Não há alterações para sincronizar.");
-      return;
-    }
-
-    setSyncStatus('syncing');
-    showToast(`Sincronizando ${pendingChanges} alterações...`);
-
-    // Simulate network request to a backend (e.g., PocketBase)
-    setTimeout(() => {
-      // In a real app, you would send `actionQueue` to the server here.
-      // If the server-side update is successful, then you clear the queue.
-      console.log("Simulating sync for actions:", actionQueue);
-      clearActionQueue();
-      setSyncStatus('success');
-      showToast("Sincronização concluída com sucesso!");
-
-      // Reset status after a while
-      setTimeout(() => setSyncStatus('idle'), 3000);
-    }, 2000);
-  };
-
-  if (pendingChanges === 0 && syncStatus === 'idle') {
-      return null; // Don't show the button if there are no pending changes and not in a success state
-  }
-
-  const buttonContent = () => {
-    switch(syncStatus) {
-      case 'syncing':
-        return (
-          <>
-            <RefreshCwIcon className="w-5 h-5 mr-2 animate-spin" />
-            Sincronizando...
-          </>
-        );
-      case 'success':
-         return (
-          <>
-            <ShieldIcon className="w-5 h-5 mr-2" />
-            Sincronizado!
-          </>
-        );
-      default:
-        return (
-          <>
-            <RefreshCwIcon className="w-5 h-5 mr-2" />
-            Sincronizar ({pendingChanges})
-          </>
-        );
-    }
-  };
-
-  return (
-    <div className="fixed bottom-6 right-6 z-20">
-      <Button 
-        onClick={handleSync} 
-        disabled={syncStatus === 'syncing'}
-        variant={syncStatus === 'success' ? 'secondary' : 'primary'}
-        className="!py-3 !px-6 !rounded-2xl !text-base shadow-lg animate-gentle-pulse"
-      >
-        {buttonContent()}
-      </Button>
-    </div>
-  );
-};
-
-
 // --- BACKUP RESTORE MODAL ---
 const BackupRestoreModal: FC<{isOpen: boolean; onClose: () => void; showToast: (msg: string) => void}> = ({isOpen, onClose, showToast}) => {
     const { users } = useAuth();
@@ -1146,23 +1114,13 @@ const BackupRestoreModal: FC<{isOpen: boolean; onClose: () => void; showToast: (
     const [selectedUserForRestore, setSelectedUserForRestore] = useState('');
 
 
-    const handleBackup = () => {
+    const handleBackup = async () => {
         if (!selectedUserForBackup) {
             showToast('Por favor, selecione um usuário para o backup.');
             return;
         }
-        // This is tricky as data is now scoped per user in the context.
-        // A better approach would be for the admin to get any user's data.
-        // For now, let's assume getRawData is for the currently logged-in user.
-        // A full implementation requires passing userId to getRawData.
-        // Let's implement a temporary direct localStorage access for admins
-         try {
-            const clients = JSON.parse(localStorage.getItem(`clients_${selectedUserForBackup}`) || '[]');
-            const stockItems = JSON.parse(localStorage.getItem(`stockItems_${selectedUserForBackup}`) || '[]');
-            const sales = JSON.parse(localStorage.getItem(`sales_${selectedUserForBackup}`) || '[]');
-            const payments = JSON.parse(localStorage.getItem(`payments_${selectedUserForBackup}`) || '[]');
-            const actionQueue = JSON.parse(localStorage.getItem(`action_queue_${selectedUserForBackup}`) || '[]');
-            const data = { clients, stockItems, sales, payments, actionQueue };
+        try {
+            const data = await getRawData(selectedUserForBackup);
             
             const jsonString = JSON.stringify(data, null, 2);
             const blob = new Blob([jsonString], { type: 'application/json' });
@@ -1184,39 +1142,29 @@ const BackupRestoreModal: FC<{isOpen: boolean; onClose: () => void; showToast: (
     };
 
     const handleRestoreClick = () => {
+        if (!selectedUserForRestore) {
+            showToast('Por favor, selecione um usuário para restaurar os dados.');
+            return;
+        }
         fileInputRef.current?.click();
     };
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
-        if (!file) return;
-
-        if (!selectedUserForRestore) {
-            showToast('Por favor, selecione um usuário para restaurar os dados.');
-            if(fileInputRef.current) fileInputRef.current.value = "";
-            return;
-        }
+        if (!file || !selectedUserForRestore) return;
 
         if (window.confirm(`Tem certeza que deseja restaurar os dados para o usuário ${users.find(u=>u.id === selectedUserForRestore)?.username}? TODOS os dados atuais DESTE USUÁRIO serão substituídos. Esta ação não pode ser desfeita.`)) {
             const reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = async (e) => {
                 try {
                     const text = e.target?.result;
                     if (typeof text !== 'string') {
                        throw new Error("Não foi possível ler o arquivo.");
                     }
                     const data = JSON.parse(text);
-                     if (data && Array.isArray(data.clients) && Array.isArray(data.stockItems) && Array.isArray(data.sales) && Array.isArray(data.payments)) {
-                        localStorage.setItem(`clients_${selectedUserForRestore}`, JSON.stringify(data.clients));
-                        localStorage.setItem(`stockItems_${selectedUserForRestore}`, JSON.stringify(data.stockItems));
-                        localStorage.setItem(`sales_${selectedUserForRestore}`, JSON.stringify(data.sales));
-                        localStorage.setItem(`payments_${selectedUserForRestore}`, JSON.stringify(data.payments));
-                        localStorage.setItem(`action_queue_${selectedUserForRestore}`, JSON.stringify(data.actionQueue || []));
-                        showToast(`Dados para ${users.find(u=>u.id === selectedUserForRestore)?.username} restaurados com sucesso!`);
-                        onClose();
-                     } else {
-                        throw new Error("Arquivo de backup inválido ou corrompido.");
-                     }
+                    await loadRawData(data, selectedUserForRestore);
+                    showToast(`Dados para ${users.find(u=>u.id === selectedUserForRestore)?.username} restaurados com sucesso!`);
+                    onClose();
                 } catch (error: any) {
                     console.error("Erro ao restaurar backup:", error);
                     showToast(`Erro ao restaurar: ${error.message}`);
@@ -1268,8 +1216,8 @@ const PaymentSuggestionModal: FC<{sale: Sale; onClose: () => void; showToast: (m
     const [partialAmount, setPartialAmount] = useState('');
     const [showPartialInput, setShowPartialInput] = useState(false);
 
-    const handleRegisterPayment = (amount: number) => {
-        addPayment({
+    const handleRegisterPayment = async (amount: number) => {
+        await addPayment({
             clientId: sale.clientId,
             paymentDate: new Date().toISOString().split('T')[0],
             amount: amount,
@@ -1419,9 +1367,9 @@ const Dashboard: FC<{ onNavigate: (view: View, clientId?: string) => void; }> = 
 const AllSales: FC<{ onEditSale: (sale: Sale) => void; showToast: (msg: string) => void; }> = ({ onEditSale, showToast }) => {
     const { sales, getClientById, deleteSale } = useData();
     
-    const handleDelete = (saleId: string) => {
+    const handleDelete = async (saleId: string) => {
         if (window.confirm('Tem certeza que deseja excluir esta venda? O estoque será ajustado.')) {
-            deleteSale(saleId);
+            await deleteSale(saleId);
             showToast('Venda excluída com sucesso!');
         }
     };
@@ -1465,9 +1413,9 @@ const AllPayments: FC<{ onEditPayment: (payment: Payment) => void; showToast: (m
         [...payments].sort((a,b) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime()),
     [payments]);
     
-    const handleDelete = (paymentId: string) => {
+    const handleDelete = async (paymentId: string) => {
         if (window.confirm('Tem certeza que deseja excluir este recebimento?')) {
-            deletePayment(paymentId);
+            await deletePayment(paymentId);
             showToast('Recebimento excluído com sucesso!');
         }
     };
@@ -1557,12 +1505,12 @@ const ClientForm: FC<{ client?: Client | null; onDone: () => void }> = ({ client
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if(client){
-            updateClient({ ...client, ...formData });
+            await updateClient({ ...client, ...formData });
         } else {
-            addClient(formData);
+            await addClient(formData);
         }
         onDone();
     };
@@ -1602,10 +1550,10 @@ const ManageClients: FC<{ setActiveView: (view: View) => void; onViewClient: (cl
         setActiveView('add_client');
     };
 
-    const handleDelete = (e: React.MouseEvent, clientId: string) => {
+    const handleDelete = async (e: React.MouseEvent, clientId: string) => {
         e.stopPropagation(); // Prevent row click when deleting
         if (window.confirm('Tem certeza que deseja excluir este cliente? Todas as vendas e pagamentos associados permanecerão no histórico, mas não será possível associar novas transações a ele.')) {
-            deleteClient(clientId);
+            await deleteClient(clientId);
             showToast('Cliente excluído com sucesso!');
         }
     };
@@ -1688,13 +1636,13 @@ const StockManager: FC = () => {
         setNewItem(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
-    const handleAddItem = (e: React.FormEvent) => {
+    const handleAddItem = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newItem.name || !newItem.code) {
             alert('Nome do produto e código são obrigatórios.');
             return;
         }
-        addStockItem({ ...newItem, quantity: parseInt(newItem.quantity, 10) || 0 });
+        await addStockItem({ ...newItem, quantity: parseInt(newItem.quantity, 10) || 0 });
         setNewItem({ name: '', size: '', code: '', quantity: '0' });
     };
 
@@ -1702,10 +1650,10 @@ const StockManager: FC = () => {
         setEditingQuantities(prev => ({...prev, [itemId]: value}));
     };
 
-    const handleUpdateQuantity = (itemId: string) => {
+    const handleUpdateQuantity = async (itemId: string) => {
         const newQuantity = parseInt(editingQuantities[itemId], 10);
         if (!isNaN(newQuantity)) {
-            updateStockItemQuantity(itemId, newQuantity);
+            await updateStockItemQuantity(itemId, newQuantity);
         }
     };
     
@@ -1842,7 +1790,7 @@ const SaleForm: FC<{ editingSale?: Sale | null; onSaleSuccess: (sale: Sale, isEd
         setSaleData(prev => ({...prev, [name]: value}));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const quantity = parseFloat(saleData.quantity) || 0;
         const unitPrice = parseFloat(saleData.unitPrice) || 0;
@@ -1859,10 +1807,10 @@ const SaleForm: FC<{ editingSale?: Sale | null; onSaleSuccess: (sale: Sale, isEd
         };
 
         if (isEditing && editingSale) {
-            const updatedSale = updateSale({ ...salePayload, id: editingSale.id, total: 0 }); // total is recalculated in context
+            const updatedSale = await updateSale({ ...salePayload, id: editingSale.id, total: 0 }); // total is recalculated in context
             onSaleSuccess(updatedSale, true);
         } else {
-            const newSale = addSale(salePayload);
+            const newSale = await addSale(salePayload);
             onSaleSuccess(newSale, false);
         }
     };
@@ -1959,7 +1907,7 @@ const PaymentForm: FC<{
         setPaymentData(prev => ({...prev, [name]: value}));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if(!paymentData.clientId || Number(paymentData.amount) <= 0){
             alert('Selecione um cliente e informe um valor maior que zero.');
@@ -1971,9 +1919,9 @@ const PaymentForm: FC<{
         };
         
         if (isEditing && editingPayment) {
-            updatePayment({ ...paymentPayload, id: editingPayment.id });
+            await updatePayment({ ...paymentPayload, id: editingPayment.id });
         } else {
-            addPayment(paymentPayload);
+            await addPayment(paymentPayload);
         }
         
         onPaymentSuccess(isEditing);
