@@ -1382,9 +1382,34 @@ const Dashboard: FC<{ onNavigate: (view: View, clientId?: string) => void; }> = 
 
 // --- SALES VIEW ---
 const SalesView: FC<{ onEditSale: (sale: Sale) => void; showToast: (msg: string) => void; }> = ({ onEditSale, showToast }) => {
-    const { clients, sales, deleteSale, clientBalances } = useData();
+    const { clients, sales, deleteSale, clientBalances, payments } = useData();
     const [selectedClient, setSelectedClient] = useState<Client | null>(null);
     const [filter, setFilter] = useState('');
+
+    const salePaymentStatus = useMemo(() => {
+        if (!selectedClient) return new Map();
+
+        const statusMap = new Map<string, 'paid' | 'partial' | 'unpaid'>();
+        const clientSales = sales.filter(s => s.clientId === selectedClient.id);
+        const clientPayments = payments.filter(p => p.clientId === selectedClient.id);
+        const sortedSales = [...clientSales].sort((a, b) => new Date(a.saleDate).getTime() - new Date(b.saleDate).getTime());
+        
+        let totalPaid = clientPayments.reduce((sum, p) => sum + p.amount, 0);
+
+        for (const sale of sortedSales) {
+            if (totalPaid >= sale.total) {
+                statusMap.set(sale.id, 'paid');
+                totalPaid -= sale.total;
+            } else if (totalPaid > 0 && totalPaid < sale.total) {
+                statusMap.set(sale.id, 'partial');
+                totalPaid = 0;
+            } else {
+                statusMap.set(sale.id, 'unpaid');
+            }
+        }
+        return statusMap;
+    }, [sales, payments, selectedClient]);
+
 
     const filteredClients = useMemo(() => {
         const sorted = [...clients].sort((a,b) => a.fullName.localeCompare(b.fullName));
@@ -1429,22 +1454,32 @@ const SalesView: FC<{ onEditSale: (sale: Sale) => void; showToast: (msg: string)
                 </div>
                 <h1 className="text-2xl font-bold text-rose-800 mb-4">Extrato de Vendas: {selectedClient.fullName}</h1>
                 <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-                    {clientSales.length > 0 ? clientSales.map(sale => (
-                        <div key={sale.id} className="p-4 bg-rose-50 border border-rose-100 rounded-2xl flex justify-between items-center flex-wrap gap-2">
-                            <div className="flex-grow">
-                                <p className="font-bold text-gray-700">{sale.productName}</p>
-                                <p className="text-sm text-gray-600">{sale.quantity}x {sale.unitPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
-                                <p className="text-xs text-gray-500">{new Date(sale.saleDate).toLocaleDateString('pt-BR')}</p>
-                            </div>
-                            <div className="flex flex-col items-end justify-center ml-4">
-                                <p className="font-bold text-rose-600 whitespace-nowrap">{sale.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
-                                <div className="flex gap-3 mt-2">
-                                    <button onClick={(e) => handleEdit(e, sale)} className="text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-blue-100 transition-colors" aria-label="Editar venda"><EditIcon/></button>
-                                    <button onClick={(e) => handleDelete(e, sale.id)} className="text-red-600 hover:text-red-800 p-1 rounded-full hover:bg-red-100 transition-colors" aria-label="Excluir venda"><TrashIcon/></button>
+                    {clientSales.length > 0 ? clientSales.map(sale => {
+                        const status = salePaymentStatus.get(sale.id) || 'unpaid';
+                        const statusClasses = {
+                            paid: { bg: 'bg-emerald-50', border: 'border-emerald-100', text: 'text-emerald-600' },
+                            partial: { bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-600' },
+                            unpaid: { bg: 'bg-rose-50', border: 'border-rose-100', text: 'text-rose-600' },
+                        };
+                        const currentStatusStyle = statusClasses[status];
+                        
+                        return (
+                            <div key={sale.id} className={`p-4 ${currentStatusStyle.bg} ${currentStatusStyle.border} rounded-2xl flex justify-between items-center flex-wrap gap-2`}>
+                                <div className="flex-grow">
+                                    <p className="font-bold text-gray-700">{sale.productName}</p>
+                                    <p className="text-sm text-gray-600">{sale.quantity}x {sale.unitPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                                    <p className="text-xs text-gray-500">{new Date(sale.saleDate).toLocaleDateString('pt-BR')}</p>
+                                </div>
+                                <div className="flex flex-col items-end justify-center ml-4">
+                                    <p className={`font-bold ${currentStatusStyle.text} whitespace-nowrap`}>{sale.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                                    <div className="flex gap-3 mt-2">
+                                        <button onClick={(e) => handleEdit(e, sale)} className="text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-blue-100 transition-colors" aria-label="Editar venda"><EditIcon/></button>
+                                        <button onClick={(e) => handleDelete(e, sale.id)} className="text-red-600 hover:text-red-800 p-1 rounded-full hover:bg-red-100 transition-colors" aria-label="Excluir venda"><TrashIcon/></button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    )) : (
+                        );
+                    }) : (
                         <EmptyState icon={ShoppingCartIcon} title="Nenhuma venda encontrada" message={`${selectedClient.fullName} ainda não tem nenhuma compra registrada.`} />
                     )}
                 </div>
@@ -1883,6 +1918,7 @@ const StockManager: FC = () => {
 const SaleForm: FC<{ editingSale?: Sale | null; onSaleSuccess: (sale: Sale, isEditing: boolean) => void; prefilledClientId: string | null; }> = ({ editingSale, onSaleSuccess, prefilledClientId }) => {
     const { clients, stockItems, addSale, updateSale } = useData();
     const isEditing = !!editingSale;
+    const clientSelectRef = useRef<HTMLDivElement>(null);
 
     const initialFormState = {
         clientId: prefilledClientId || '',
@@ -1896,6 +1932,16 @@ const SaleForm: FC<{ editingSale?: Sale | null; onSaleSuccess: (sale: Sale, isEd
     };
     
     const [saleData, setSaleData] = useState(initialFormState);
+    const [clientSearch, setClientSearch] = useState('');
+    const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false);
+    const [clientError, setClientError] = useState('');
+
+    const filteredClients = useMemo(() => {
+        const sortedClients = [...clients].sort((a,b) => a.fullName.localeCompare(b.fullName));
+        if (!clientSearch) return sortedClients;
+        return sortedClients.filter(c => c.fullName.toLowerCase().includes(clientSearch.toLowerCase()));
+    }, [clients, clientSearch]);
+
 
     useEffect(() => {
         if (editingSale) {
@@ -1913,6 +1959,25 @@ const SaleForm: FC<{ editingSale?: Sale | null; onSaleSuccess: (sale: Sale, isEd
              setSaleData(initialFormState);
         }
     }, [editingSale, prefilledClientId]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (clientSelectRef.current && !clientSelectRef.current.contains(event.target as Node)) {
+                setIsClientDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
+    const handleClientSelect = (clientId: string) => {
+        setSaleData(prev => ({ ...prev, clientId }));
+        setIsClientDropdownOpen(false);
+        setClientSearch('');
+        setClientError('');
+    };
 
 
     useEffect(() => {
@@ -1937,6 +2002,13 @@ const SaleForm: FC<{ editingSale?: Sale | null; onSaleSuccess: (sale: Sale, isEd
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setClientError('');
+
+        if (!saleData.clientId) {
+            setClientError('É obrigatório selecionar um cliente para registrar a venda.');
+            return;
+        }
+
         const quantity = parseFloat(saleData.quantity) || 0;
         const unitPrice = parseFloat(saleData.unitPrice) || 0;
 
@@ -1951,12 +2023,16 @@ const SaleForm: FC<{ editingSale?: Sale | null; onSaleSuccess: (sale: Sale, isEd
             unitPrice: unitPrice,
         };
 
-        if (isEditing && editingSale) {
-            const updatedSale = await updateSale({ ...salePayload, id: editingSale.id, total: 0 }); // total is recalculated in context
-            onSaleSuccess(updatedSale, true);
-        } else {
-            const newSale = await addSale(salePayload);
-            onSaleSuccess(newSale, false);
+        try {
+            if (isEditing && editingSale) {
+                const updatedSale = await updateSale({ ...salePayload, id: editingSale.id, total: 0 }); // total is recalculated in context
+                onSaleSuccess(updatedSale, true);
+            } else {
+                const newSale = await addSale(salePayload);
+                onSaleSuccess(newSale, false);
+            }
+        } catch (error: any) {
+            alert(`Erro ao salvar venda: ${error.message}`);
         }
     };
 
@@ -1967,18 +2043,62 @@ const SaleForm: FC<{ editingSale?: Sale | null; onSaleSuccess: (sale: Sale, isEd
             <h1 className="text-2xl font-bold text-rose-800 mb-6">{isEditing ? 'Editar Venda' : 'Cadastrar Venda'} 🛍️</h1>
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Select label="Cliente" name="clientId" value={saleData.clientId} onChange={handleChange}>
-                        <option value="">Selecione um cliente</option>
-                        {clients.map(c => <option key={c.id} value={c.id}>{c.fullName}</option>)}
-                    </Select>
-                    <Input label="Data da Venda" name="saleDate" type="date" value={saleData.saleDate} onChange={handleChange} />
+                     <div ref={clientSelectRef}>
+                        <label htmlFor="client-select-button" className="block text-sm font-medium text-gray-700 mb-1">Selecionar Cliente *</label>
+                        <div className="relative">
+                            <button
+                                type="button"
+                                id="client-select-button"
+                                onClick={() => setIsClientDropdownOpen(prev => !prev)}
+                                className="w-full px-4 py-2 text-left bg-white/70 border border-gray-300 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400 transition-shadow"
+                                aria-haspopup="listbox"
+                                aria-expanded={isClientDropdownOpen}
+                            >
+                                {saleData.clientId ? clients.find(c => c.id === saleData.clientId)?.fullName : <span className="text-gray-500">Selecione um cliente</span>}
+                            </button>
+                            {isClientDropdownOpen && (
+                                <div className="absolute z-10 w-full mt-1 bg-white rounded-2xl shadow-lg border border-gray-200 max-h-60 overflow-y-auto">
+                                    <div className="p-2">
+                                        <input
+                                            type="text"
+                                            value={clientSearch}
+                                            onChange={e => setClientSearch(e.target.value)}
+                                            placeholder="Buscar cliente..."
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-pink-400"
+                                            autoFocus
+                                        />
+                                    </div>
+                                    <ul role="listbox">
+                                        {filteredClients.map(c => (
+                                            <li
+                                                key={c.id}
+                                                onClick={() => handleClientSelect(c.id)}
+                                                className="px-4 py-2 hover:bg-pink-50 cursor-pointer"
+                                                role="option"
+                                                aria-selected={c.id === saleData.clientId}
+                                            >
+                                                {c.fullName}
+                                            </li>
+                                        ))}
+                                        {filteredClients.length === 0 && (
+                                            <li className="px-4 py-2 text-gray-500">Nenhum cliente encontrado.</li>
+                                        )}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
+                        {clientError && <p className="text-red-500 text-sm mt-1">{clientError}</p>}
+                    </div>
+                    <div className="self-end">
+                      <Input label="Data da Venda" name="saleDate" type="date" value={saleData.saleDate} onChange={handleChange} />
+                    </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Input label="Código do Produto (opcional)" name="productCode" type="number" placeholder="Puxa do estoque" value={saleData.productCode} onChange={handleChange} />
-                    <Input label="Nome do Produto" name="productName" value={saleData.productName} onChange={handleChange} />
+                    <Input label="Nome do Produto" name="productName" value={saleData.productName} onChange={handleChange} required/>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Input label="Quantidade" name="quantity" type="number" min="1" value={saleData.quantity} onChange={handleChange} />
+                    <Input label="Quantidade" name="quantity" type="number" min="1" value={saleData.quantity} onChange={handleChange} required/>
                     <Input
                         label="Valor Unitário (R$)"
                         name="unitPrice"
@@ -1989,6 +2109,7 @@ const SaleForm: FC<{ editingSale?: Sale | null; onSaleSuccess: (sale: Sale, isEd
                         onChange={handleChange}
                         onFocus={(e) => e.target.value === '0' && setSaleData(prev => ({...prev, unitPrice: ''}))}
                         onBlur={(e) => e.target.value === '' && setSaleData(prev => ({...prev, unitPrice: '0'}))}
+                        required
                     />
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Valor Total</label>
@@ -1997,7 +2118,7 @@ const SaleForm: FC<{ editingSale?: Sale | null; onSaleSuccess: (sale: Sale, isEd
                 </div>
                 <TextArea label="Observação" name="observation" value={saleData.observation} onChange={handleChange} />
                 <div className="flex justify-end pt-4">
-                    <Button type="submit">{isEditing ? 'Atualizar Venda' : 'Registrar Venda'}</Button>
+                    <Button type="submit" disabled={!saleData.clientId}>{isEditing ? 'Atualizar Venda' : 'Registrar Venda'}</Button>
                 </div>
             </form>
         </Card>
@@ -2254,6 +2375,30 @@ const ClientDetail: FC<{ clientId: string; onNavigate: (view: View, clientId?: s
     const balance = clientBalances.get(clientId) || 0;
 
     type ClientTransaction = (Sale & { type: 'sale' }) | (Payment & { type: 'payment' });
+    
+    const salePaymentStatus = useMemo(() => {
+        const statusMap = new Map<string, 'paid' | 'partial' | 'unpaid'>();
+        const clientSales = sales.filter(s => s.clientId === clientId);
+        const clientPayments = payments.filter(p => p.clientId === clientId);
+        // Get sales sorted oldest to newest to apply payments FIFO
+        const sortedSales = [...clientSales].sort((a, b) => new Date(a.saleDate).getTime() - new Date(b.saleDate).getTime());
+        
+        let totalPaid = clientPayments.reduce((sum, p) => sum + p.amount, 0);
+
+        for (const sale of sortedSales) {
+            if (totalPaid >= sale.total) {
+                statusMap.set(sale.id, 'paid');
+                totalPaid -= sale.total;
+            } else if (totalPaid > 0 && totalPaid < sale.total) {
+                statusMap.set(sale.id, 'partial');
+                totalPaid = 0; // The rest of the payment is consumed here
+            } else {
+                statusMap.set(sale.id, 'unpaid');
+            }
+        }
+        return statusMap;
+    }, [sales, payments, clientId]);
+
 
     const transactions = useMemo(() => {
         const clientSales = sales.filter(s => s.clientId === clientId).map(s => ({ ...s, type: 'sale' as const }));
@@ -2299,16 +2444,27 @@ const ClientDetail: FC<{ clientId: string; onNavigate: (view: View, clientId?: s
                 <h2 className="text-xl font-bold text-rose-800 mb-4">Extrato do Cliente</h2>
                 {transactions.length > 0 ? (
                     <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2">
-                        {transactions.map(tx => (
-                            tx.type === 'sale' ? (
-                                <div key={`sale-${tx.id}`} className="p-3 bg-rose-50 border border-rose-100 rounded-xl flex justify-between items-center">
+                        {transactions.map(tx => {
+                            if (tx.type === 'sale') {
+                                const status = salePaymentStatus.get(tx.id) || 'unpaid';
+                                const statusClasses = {
+                                    paid: { bg: 'bg-emerald-50', border: 'border-emerald-100', text: 'text-emerald-600' },
+                                    partial: { bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-600' },
+                                    unpaid: { bg: 'bg-rose-50', border: 'border-rose-100', text: 'text-rose-600' },
+                                };
+                                const currentStatusStyle = statusClasses[status];
+                                
+                                return (
+                                <div key={`sale-${tx.id}`} className={`p-3 ${currentStatusStyle.bg} ${currentStatusStyle.border} rounded-xl flex justify-between items-center`}>
                                     <div>
                                         <p className="font-semibold text-gray-800">{tx.productName} (x{tx.quantity})</p>
                                         <p className="text-xs text-gray-500">{new Date(tx.saleDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
                                     </div>
-                                    <p className="font-bold text-rose-600">-{tx.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                                    <p className={`font-bold ${currentStatusStyle.text}`}>-{tx.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
                                 </div>
-                            ) : (
+                                );
+                            } else {
+                                return (
                                 <div key={`payment-${tx.id}`} className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex justify-between items-center">
                                     <div>
                                         <p className="font-semibold text-gray-800">Pagamento Recebido</p>
@@ -2316,8 +2472,9 @@ const ClientDetail: FC<{ clientId: string; onNavigate: (view: View, clientId?: s
                                     </div>
                                     <p className="font-bold text-emerald-600">+{tx.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
                                 </div>
-                            )
-                        ))}
+                                )
+                            }
+                        })}
                     </div>
                 ) : (
                     <EmptyState icon={HistoryIcon} title="Nenhuma transação" message="Este cliente ainda não possui vendas ou pagamentos registrados." />
