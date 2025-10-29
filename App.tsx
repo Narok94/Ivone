@@ -691,7 +691,6 @@ const AIAssistant: FC<{ showToast: (message: string) => void }> = ({ showToast }
     const audioCtxRef = useRef<AudioContext | null>(null);
     const lastPlayedMessageRef = useRef<ReactNode | null>(null);
     const [initialGreetingAudio, setInitialGreetingAudio] = useState<AudioBuffer | null>(null);
-    const hasOpened = useRef(false);
 
     const isMaleTheme = currentUser?.gender === 'male';
 
@@ -766,50 +765,24 @@ const AIAssistant: FC<{ showToast: (message: string) => void }> = ({ showToast }
             // Fail silently, the audio will be generated on-demand if preload fails.
         }
     };
-
+    
     useEffect(() => {
-        // This single, consolidated effect handles all audio playback logic.
         if (!isOpen) {
-            hasOpened.current = false; // Reset the flag when the window is closed.
             return;
         }
 
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    
+
         const lastMessage = messages[messages.length - 1];
-        if (!lastMessage || lastMessage.sender !== 'ai' || typeof lastMessage.text !== 'string') {
-            return;
-        }
-    
-        const isJustOpened = !hasOpened.current;
-        if (isJustOpened) {
-            hasOpened.current = true;
-            const greetingMessage = messages.find(m => m.sender === 'ai');
-            if (greetingMessage && typeof greetingMessage.text === 'string') {
-                lastPlayedMessageRef.current = greetingMessage.text;
-                if (initialGreetingAudio && audioCtxRef.current) {
-                    try {
-                        if (audioCtxRef.current.state === 'suspended') {
-                             audioCtxRef.current.resume();
-                        }
-                        const source = audioCtxRef.current.createBufferSource();
-                        source.buffer = initialGreetingAudio;
-                        source.connect(audioCtxRef.current.destination);
-                        source.start();
-                    } catch (e) {
-                        console.error("Error playing preloaded audio", e);
-                        textToSpeechAndPlay(greetingMessage.text);
-                    }
-                } else {
-                    textToSpeechAndPlay(greetingMessage.text);
-                }
-            }
-        } else if (lastMessage.text !== lastPlayedMessageRef.current) {
+        if (
+            lastMessage?.sender === 'ai' &&
+            typeof lastMessage.text === 'string' &&
+            lastMessage.text !== lastPlayedMessageRef.current
+        ) {
             lastPlayedMessageRef.current = lastMessage.text;
             textToSpeechAndPlay(lastMessage.text);
         }
-    }, [messages, isOpen, initialGreetingAudio]);
-
+    }, [messages, isOpen]);
 
     useEffect(() => {
         if (!process.env.API_KEY) {
@@ -1019,9 +992,32 @@ const AIAssistant: FC<{ showToast: (message: string) => void }> = ({ showToast }
 
     const handleOrbClick = () => {
         if (wasDraggedRef.current) return;
+
+        const playGreeting = () => {
+            const greetingMessage = messages.find(m => m.sender === 'ai');
+            if (greetingMessage && typeof greetingMessage.text === 'string') {
+                lastPlayedMessageRef.current = greetingMessage.text;
+                if (initialGreetingAudio && audioCtxRef.current) {
+                    try {
+                        const source = audioCtxRef.current.createBufferSource();
+                        source.buffer = initialGreetingAudio;
+                        source.connect(audioCtxRef.current.destination);
+                        source.start();
+                    } catch (e) {
+                        console.error("Error playing preloaded audio", e);
+                        textToSpeechAndPlay(greetingMessage.text);
+                    }
+                } else {
+                    textToSpeechAndPlay(greetingMessage.text);
+                }
+            }
+        };
+
         // Resume audio context on user gesture for mobile compatibility
         if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
-            audioCtxRef.current.resume();
+            audioCtxRef.current.resume().then(playGreeting);
+        } else {
+             playGreeting();
         }
         setIsOpen(true);
     };
