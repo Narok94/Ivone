@@ -691,6 +691,7 @@ const AIAssistant: FC<{ showToast: (message: string) => void }> = ({ showToast }
     const audioCtxRef = useRef<AudioContext | null>(null);
     const lastPlayedMessageRef = useRef<ReactNode | null>(null);
     const [initialGreetingAudio, setInitialGreetingAudio] = useState<AudioBuffer | null>(null);
+    const hasOpened = useRef(false);
 
     const isMaleTheme = currentUser?.gender === 'male';
 
@@ -767,34 +768,47 @@ const AIAssistant: FC<{ showToast: (message: string) => void }> = ({ showToast }
     };
 
     useEffect(() => {
+        if (!isOpen) {
+            hasOpened.current = false;
+        }
+    }, [isOpen]);
+
+    useEffect(() => {
         if (isOpen) {
             messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
         }
-        
+    
         const lastMessage = messages[messages.length - 1];
-        
-        if (isOpen && lastMessage && lastMessage.sender === 'ai' && typeof lastMessage.text === 'string' && lastMessage.text !== lastPlayedMessageRef.current) {
-            lastPlayedMessageRef.current = lastMessage.text;
-
-            // Check if it's the very first message and if we have pre-loaded audio
-            if (messages.length === 1 && initialGreetingAudio && audioCtxRef.current) {
-                try {
-                    if (audioCtxRef.current.state === 'suspended') {
-                         audioCtxRef.current.resume();
+        if (!isOpen || !lastMessage || lastMessage.sender !== 'ai' || typeof lastMessage.text !== 'string') {
+            return;
+        }
+    
+        const isJustOpened = !hasOpened.current;
+        if (isJustOpened) {
+            hasOpened.current = true;
+            const greetingMessage = messages.find(m => m.sender === 'ai');
+            if (greetingMessage && typeof greetingMessage.text === 'string') {
+                lastPlayedMessageRef.current = greetingMessage.text;
+                if (initialGreetingAudio && audioCtxRef.current) {
+                    try {
+                        if (audioCtxRef.current.state === 'suspended') {
+                             audioCtxRef.current.resume();
+                        }
+                        const source = audioCtxRef.current.createBufferSource();
+                        source.buffer = initialGreetingAudio;
+                        source.connect(audioCtxRef.current.destination);
+                        source.start();
+                    } catch (e) {
+                        console.error("Error playing preloaded audio", e);
+                        textToSpeechAndPlay(greetingMessage.text);
                     }
-                    const source = audioCtxRef.current.createBufferSource();
-                    source.buffer = initialGreetingAudio;
-                    source.connect(audioCtxRef.current.destination);
-                    source.start();
-                } catch (e) {
-                    console.error("Error playing preloaded audio", e);
-                    // Fallback to generating it on the fly
-                    textToSpeechAndPlay(lastMessage.text);
+                } else {
+                    textToSpeechAndPlay(greetingMessage.text);
                 }
-            } else {
-                // For all other messages, generate and play as before
-                textToSpeechAndPlay(lastMessage.text);
             }
+        } else if (lastMessage.text !== lastPlayedMessageRef.current) {
+            lastPlayedMessageRef.current = lastMessage.text;
+            textToSpeechAndPlay(lastMessage.text);
         }
     }, [messages, isOpen, initialGreetingAudio]);
 
@@ -1005,6 +1019,15 @@ const AIAssistant: FC<{ showToast: (message: string) => void }> = ({ showToast }
         setIsDragging(false);
     };
 
+    const handleOrbClick = () => {
+        if (wasDraggedRef.current) return;
+        // Resume audio context on user gesture for mobile compatibility
+        if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
+            audioCtxRef.current.resume();
+        }
+        setIsOpen(true);
+    };
+
     useEffect(() => {
         if (isDragging) {
             const moveHandler = (e: MouseEvent) => handleMouseMove(e);
@@ -1035,7 +1058,7 @@ const AIAssistant: FC<{ showToast: (message: string) => void }> = ({ showToast }
                 className={`fixed top-0 left-0 z-30 w-16 h-16 rounded-full flex items-center justify-center shadow-lg hover:shadow-2xl transition-transform duration-300 ${isDragging ? 'scale-110 cursor-grabbing' : 'hover:scale-110 cursor-grab'}`}
                 onMouseDown={handleMouseDown}
                 onTouchStart={handleTouchStart}
-                onClick={() => !wasDraggedRef.current && setIsOpen(true)}
+                onClick={handleOrbClick}
             >
                 <div className="absolute inset-0 rounded-full animate-gentle-pulse"></div>
                 <CleanMagicIcon className="w-10 h-10 text-pink-500 relative" />
