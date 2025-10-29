@@ -768,18 +768,16 @@ const AIAssistant: FC<{ showToast: (message: string) => void }> = ({ showToast }
     };
 
     useEffect(() => {
+        // This single, consolidated effect handles all audio playback logic.
         if (!isOpen) {
-            hasOpened.current = false;
+            hasOpened.current = false; // Reset the flag when the window is closed.
+            return;
         }
-    }, [isOpen]);
 
-    useEffect(() => {
-        if (isOpen) {
-            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-        }
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     
         const lastMessage = messages[messages.length - 1];
-        if (!isOpen || !lastMessage || lastMessage.sender !== 'ai' || typeof lastMessage.text !== 'string') {
+        if (!lastMessage || lastMessage.sender !== 'ai' || typeof lastMessage.text !== 'string') {
             return;
         }
     
