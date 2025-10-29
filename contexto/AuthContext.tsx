@@ -1,4 +1,4 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, useCallback } from 'react';
 import useLocalStorage from '../hooks/useLocalStorage';
 import { User } from '../types';
 
@@ -23,20 +23,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [users, setUsers] = useLocalStorage<User[]>('users', initialUsers);
   const [currentUser, setCurrentUser] = useLocalStorage<User | null>('currentUser', null);
   
-  const login = (username: string, pass: string) => {
+  const login = useCallback((username: string, pass: string) => {
     const user = users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === pass);
     if (user) {
         setCurrentUser(user);
     } else {
         throw new Error('Usuário ou senha inválidos.');
     }
-  };
+  }, [users, setCurrentUser]);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setCurrentUser(null);
-  };
+  }, [setCurrentUser]);
   
-  const addUser = (username: string, pass: string, gender: 'male' | 'female') => {
+  const addUser = useCallback((username: string, pass: string, gender: 'male' | 'female') => {
       if (users.some(u => u.username.toLowerCase() === username.toLowerCase())) {
           throw new Error('Este nome de usuário já existe.');
       }
@@ -48,19 +48,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           gender,
       };
       setUsers(prev => [...prev, newUser]);
-  };
+  }, [users, setUsers]);
   
-  const updatePassword = (userId: string, pass: string) => {
+  const updatePassword = useCallback((userId: string, pass: string) => {
       setUsers(prev => prev.map(u => u.id === userId ? { ...u, password: pass } : u));
-  };
+  }, [setUsers]);
 
-  const deleteUser = (userId: string) => {
+  const deleteUser = useCallback((userId: string) => {
       const userToDelete = users.find(u => u.id === userId);
       if (userToDelete?.role === 'admin') {
           throw new Error('Não é possível excluir o usuário administrador.');
       }
       setUsers(prev => prev.filter(u => u.id !== userId));
-  };
+  }, [users, setUsers]);
 
 
   const value = {

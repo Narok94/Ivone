@@ -44,7 +44,7 @@ const CleanMagicIcon: FC<{className?: string}> = ({className}) => (
 
 
 // --- VIEWS & FORMS (defined globally to be used by both layouts) ---
-type View = 'dashboard' | 'clients' | 'add_client' | 'add_sale' | 'stock' | 'add_payment' | 'reports' | 'history' | 'pending_payments' | 'all_sales' | 'all_payments' | 'client_detail' | 'manage_users';
+type View = 'dashboard' | 'clients' | 'add_client' | 'add_sale' | 'stock' | 'add_payment' | 'reports' | 'history' | 'pending_payments' | 'sales_view' | 'all_payments' | 'client_detail' | 'manage_users';
 
 // --- TOAST NOTIFICATION ---
 const Toast: FC<{ message: string; onClose: () => void }> = ({ message, onClose }) => {
@@ -267,7 +267,7 @@ const IvoneLayout: React.FC = () => {
       case 'reports': return <Reports />;
       case 'history': return <History />;
       case 'pending_payments': return <PendingPayments onViewClient={handleViewClient} />;
-      case 'all_sales': return <AllSales onEditSale={handleEditSale} showToast={showToast} />;
+      case 'sales_view': return <SalesView onEditSale={handleEditSale} showToast={showToast} />;
       case 'all_payments': return <AllPayments onEditPayment={handleEditPayment} showToast={showToast} />;
       default: return <Dashboard onNavigate={handleNavigate} />;
     }
@@ -354,7 +354,7 @@ const AdminLayout: FC = () => {
     const handleSaleSuccess = (sale: Sale, isEditing: boolean) => {
       showToast(isEditing ? 'Venda atualizada!' : 'Venda cadastrada!');
       setEditingSale(null);
-      setActiveView('all_sales');
+      setActiveView('sales_view');
     };
     
     const handlePaymentSuccess = (isEditing: boolean) => {
@@ -375,7 +375,7 @@ const AdminLayout: FC = () => {
             case 'reports': return <Reports />;
             case 'history': return <History />;
             case 'pending_payments': return <PendingPayments onViewClient={handleViewClient} />;
-            case 'all_sales': return <AllSales onEditSale={handleEditSale} showToast={showToast} />;
+            case 'sales_view': return <SalesView onEditSale={handleEditSale} showToast={showToast} />;
             case 'all_payments': return <AllPayments onEditPayment={handleEditPayment} showToast={showToast} />;
             case 'manage_users': return <ManageUsers showToast={showToast} />;
             default: return <AdminDashboard />;
@@ -384,7 +384,7 @@ const AdminLayout: FC = () => {
 
     const navItems = [
         { id: 'dashboard', icon: HomeIcon, title: 'Dashboard' },
-        { id: 'all_sales', icon: ShoppingCartIcon, title: 'Vendas' },
+        { id: 'sales_view', icon: ShoppingCartIcon, title: 'Vendas' },
         { id: 'all_payments', icon: CreditCardIcon, title: 'Recebimentos' },
         { id: 'clients', icon: UsersIcon, title: 'Clientes' },
         { id: 'stock', icon: ArchiveIcon, title: 'Estoque' },
@@ -1295,7 +1295,7 @@ const HeaderSummary: FC<{ setActiveView: (view: View) => void }> = ({ setActiveV
 
     const summaryItems = [
         { title: 'Clientes', value: clients.length, icon: UsersIcon, view: 'clients', color: 'from-purple-400 to-pink-400' },
-        { title: 'Vendas', value: totalSalesValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), icon: TrendingUpIcon, view: 'all_sales', color: 'from-pink-400 to-rose-400' },
+        { title: 'Vendas', value: totalSalesValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), icon: TrendingUpIcon, view: 'sales_view', color: 'from-pink-400 to-rose-400' },
         { title: 'Recebidos', value: totalReceived.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), icon: WalletIcon, view: 'all_payments', color: 'from-emerald-400 to-green-400' },
         { title: 'Pendente', value: totalPending.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), icon: ClockIcon, view: 'pending_payments', color: 'from-amber-400 to-orange-400' },
     ];
@@ -1380,48 +1380,135 @@ const Dashboard: FC<{ onNavigate: (view: View, clientId?: string) => void; }> = 
 };
 
 
-// --- ALL SALES ---
-const AllSales: FC<{ onEditSale: (sale: Sale) => void; showToast: (msg: string) => void; }> = ({ onEditSale, showToast }) => {
-    const { sales, getClientById, deleteSale } = useData();
-    
-    const handleDelete = async (saleId: string) => {
+// --- SALES VIEW ---
+const SalesView: FC<{ onEditSale: (sale: Sale) => void; showToast: (msg: string) => void; }> = ({ onEditSale, showToast }) => {
+    const { clients, sales, deleteSale, clientBalances } = useData();
+    const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+    const [filter, setFilter] = useState('');
+
+    const filteredClients = useMemo(() => {
+        const sorted = [...clients].sort((a,b) => a.fullName.localeCompare(b.fullName));
+        if (!filter) return sorted;
+        const lowercasedFilter = filter.toLowerCase();
+        return sorted.filter(c =>
+            c.fullName.toLowerCase().includes(lowercasedFilter) ||
+            c.phone.toLowerCase().includes(lowercasedFilter) ||
+            c.email.toLowerCase().includes(lowercasedFilter) ||
+            c.address.toLowerCase().includes(lowercasedFilter)
+        );
+    }, [clients, filter]);
+
+    const clientSales = useMemo(() => {
+        if (!selectedClient) return [];
+        return sales
+            .filter(s => s.clientId === selectedClient.id)
+            .sort((a, b) => new Date(b.saleDate).getTime() - new Date(a.saleDate).getTime());
+    }, [sales, selectedClient]);
+
+    const handleDelete = async (e: React.MouseEvent, saleId: string) => {
+        e.stopPropagation();
         if (window.confirm('Tem certeza que deseja excluir esta venda? O estoque será ajustado.')) {
             await deleteSale(saleId);
             showToast('Venda excluída com sucesso!');
         }
     };
 
-    const sortedSales = useMemo(() => 
-        [...sales].sort((a,b) => new Date(b.saleDate).getTime() - new Date(a.saleDate).getTime()),
-    [sales]);
+    const handleEdit = (e: React.MouseEvent, sale: Sale) => {
+        e.stopPropagation();
+        onEditSale(sale);
+    };
 
-    return (
-        <Card>
-            <h1 className="text-2xl font-bold text-rose-800 mb-6">Todas as Vendas 🛒</h1>
-            <div className="space-y-4">
-                {sortedSales.length > 0 ? sortedSales.map(sale => {
-                     const client = getClientById(sale.clientId);
-                     return (
-                        <div key={sale.id} className="p-4 bg-rose-50 border border-rose-100 rounded-2xl flex justify-between items-center">
+    if (selectedClient) {
+        return (
+            <Card>
+                <div className="flex items-center mb-6">
+                     <Button variant="secondary" onClick={() => setSelectedClient(null)}>
+                        <ArrowLeftIcon className="w-5 h-5 mr-2 inline-block"/>
+                        Voltar para Clientes
+                    </Button>
+                </div>
+                <h1 className="text-2xl font-bold text-rose-800 mb-4">Extrato de Vendas: {selectedClient.fullName}</h1>
+                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                    {clientSales.length > 0 ? clientSales.map(sale => (
+                        <div key={sale.id} className="p-4 bg-rose-50 border border-rose-100 rounded-2xl flex justify-between items-center flex-wrap gap-2">
                             <div className="flex-grow">
-                                <p className="font-bold text-gray-700">Venda para {client?.fullName || 'Cliente não encontrado'}</p>
-                                <p className="text-sm text-gray-600">{sale.quantity}x {sale.productName}</p>
+                                <p className="font-bold text-gray-700">{sale.productName}</p>
+                                <p className="text-sm text-gray-600">{sale.quantity}x {sale.unitPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
                                 <p className="text-xs text-gray-500">{new Date(sale.saleDate).toLocaleDateString('pt-BR')}</p>
                             </div>
                             <div className="flex flex-col items-end justify-center ml-4">
-                                <p className="font-bold text-rose-600 whitespace-nowrap">-{sale.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                                <p className="font-bold text-rose-600 whitespace-nowrap">{sale.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
                                 <div className="flex gap-3 mt-2">
-                                    <button onClick={() => onEditSale(sale)} className="text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-blue-100 transition-colors" aria-label="Editar venda"><EditIcon/></button>
-                                    <button onClick={() => handleDelete(sale.id)} className="text-red-600 hover:text-red-800 p-1 rounded-full hover:bg-red-100 transition-colors" aria-label="Excluir venda"><TrashIcon/></button>
+                                    <button onClick={(e) => handleEdit(e, sale)} className="text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-blue-100 transition-colors" aria-label="Editar venda"><EditIcon/></button>
+                                    <button onClick={(e) => handleDelete(e, sale.id)} className="text-red-600 hover:text-red-800 p-1 rounded-full hover:bg-red-100 transition-colors" aria-label="Excluir venda"><TrashIcon/></button>
                                 </div>
                             </div>
                         </div>
-                     )
-                }) : <EmptyState icon={ShoppingCartIcon} title="Nenhuma venda registrada" message="Quando você registrar uma nova venda, ela aparecerá aqui."/>}
+                    )) : (
+                        <EmptyState icon={ShoppingCartIcon} title="Nenhuma venda encontrada" message={`${selectedClient.fullName} ainda não tem nenhuma compra registrada.`} />
+                    )}
+                </div>
+            </Card>
+        );
+    }
+
+    return (
+        <Card>
+            <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
+                <h1 className="text-2xl font-bold text-rose-800">Vendas por Cliente 🛒</h1>
             </div>
+             <Input
+                label="Buscar cliente..."
+                id="search-client-sales-view"
+                placeholder="Digite para buscar..."
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                className="mb-6"
+            />
+             {filteredClients.length > 0 ? (
+                <div className="overflow-x-auto">
+                     <table className="w-full text-left">
+                        <thead className="bg-pink-100/70 text-pink-800 font-semibold uppercase text-sm">
+                            <tr>
+                                <th className="p-3 rounded-l-2xl">Nome</th>
+                                <th className="p-3 hidden md:table-cell">Telefone</th>
+                                <th className="p-3 rounded-r-2xl">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredClients.map(client => {
+                                const balance = clientBalances.get(client.id) || 0;
+                                return (
+                                <tr key={client.id} onClick={() => setSelectedClient(client)} className="border-b border-pink-100/50 hover:bg-pink-50/50 cursor-pointer">
+                                    <td className="p-3 font-medium">{client.fullName}</td>
+                                    <td className="p-3 hidden md:table-cell">{client.phone}</td>
+                                    <td className="p-3">
+                                        {balance > 0 ? (
+                                            <span className="text-xs font-semibold inline-block py-1 px-2 rounded-full text-rose-700 bg-rose-100 whitespace-nowrap">
+                                                Devendo {balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                            </span>
+                                        ) : (
+                                            <span className="text-xs font-semibold inline-block py-1 px-2 rounded-full text-emerald-700 bg-emerald-100 whitespace-nowrap">
+                                                Em dia
+                                            </span>
+                                        )}
+                                    </td>
+                                </tr>
+                                )
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            ) : (
+                 <EmptyState 
+                    icon={UsersIcon} 
+                    title={clients.length === 0 ? "Nenhum cliente cadastrado" : "Nenhum cliente encontrado"} 
+                    message={clients.length === 0 ? "Cadastre um cliente primeiro para poder visualizar suas vendas." : "Tente refinar sua busca."} 
+                />
+            )}
         </Card>
     );
-}
+};
 
 // --- ALL PAYMENTS ---
 const AllPayments: FC<{ onEditPayment: (payment: Payment) => void; showToast: (msg: string) => void; }> = ({ onEditPayment, showToast }) => {
