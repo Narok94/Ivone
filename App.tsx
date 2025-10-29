@@ -619,8 +619,8 @@ const ManageUsers: FC<{showToast: (msg: string) => void;}> = ({ showToast }) => 
             {/* Add User Modal */}
             <Modal isOpen={isAddUserModalOpen} onClose={() => setAddUserModalOpen(false)} title="Criar Novo Usuário">
                 <form onSubmit={handleAddUser} className="space-y-4">
-                    <Input label="Nome de usuário" id="newUsername" value={newUser.username} onChange={e => setNewUser(p => ({...p, username: e.target.value}))} required />
-                    <Input label="Senha" id="newPassword" type="password" value={newUser.password} onChange={e => setNewUser(p => ({...p, password: e.target.value}))} required />
+                    <Input label="Nome de usuário" id="newUsername" value={newUser.username} onChange={e => setNewUser(p => ({...p, username: e.target.value}))} />
+                    <Input label="Senha" id="newPassword" type="password" value={newUser.password} onChange={e => setNewUser(p => ({...p, password: e.target.value}))} />
                     <Select label="Gênero" id="newGender" value={newUser.gender} onChange={e => setNewUser(p => ({...p, gender: e.target.value as 'male' | 'female'}))}>
                         <option value="female">Feminino</option>
                         <option value="male">Masculino</option>
@@ -632,7 +632,7 @@ const ManageUsers: FC<{showToast: (msg: string) => void;}> = ({ showToast }) => 
             {/* Edit User Modal */}
             <Modal isOpen={!!isEditUserModalOpen} onClose={() => setEditUserModalOpen(null)} title={`Mudar senha de ${isEditUserModalOpen?.username}`}>
                 <form onSubmit={handleUpdatePassword} className="space-y-4">
-                    <Input label="Nova Senha" id="editPassword" type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} required autoFocus/>
+                    <Input label="Nova Senha" id="editPassword" type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} autoFocus/>
                     <Button type="submit">Atualizar Senha</Button>
                 </form>
             </Modal>
@@ -1517,9 +1517,40 @@ const ClientForm: FC<{ client?: Client | null; onDone: () => void }> = ({ client
         observation: client?.observation || '',
     });
 
+    const capitalizeWords = (str: string): string => {
+        if (!str) return '';
+        return str
+            .toLowerCase()
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+    };
+
+    const formatPhone = (value: string): string => {
+        if (!value) return '';
+        const digits = value.replace(/\D/g, '').slice(0, 11);
+        if (digits.length <= 2) return digits;
+        if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+        if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+        return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+    };
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        let finalValue = value;
+        if (name === 'fullName') {
+            finalValue = capitalizeWords(value);
+        } else if (name === 'phone') {
+            finalValue = formatPhone(value);
+        }
+        setFormData(prev => ({ ...prev, [name]: finalValue }));
+    };
+
+    const handleEmailDomainClick = (domain: string) => {
+        setFormData(prev => {
+            const email = prev.email.split('@')[0];
+            return { ...prev, email: email + domain };
+        });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -1534,11 +1565,25 @@ const ClientForm: FC<{ client?: Client | null; onDone: () => void }> = ({ client
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
-            <Input label="Nome Completo" id="fullName" name="fullName" value={formData.fullName} onChange={handleChange} required />
-            <Input label="Endereço Completo" id="address" name="address" value={formData.address} onChange={handleChange} required />
-            <Input label="Telefone" id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange} required />
-            <Input label="E-mail" id="email" name="email" type="email" value={formData.email} onChange={handleChange} />
-            <Input label="CPF" id="cpf" name="cpf" value={formData.cpf} onChange={handleChange} required />
+            <Input label="Nome Completo" id="fullName" name="fullName" value={formData.fullName} onChange={handleChange} />
+            <Input label="Endereço Completo" id="address" name="address" value={formData.address} onChange={handleChange} />
+            <Input label="Telefone" id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange} maxLength={15} />
+            <div>
+                <Input label="E-mail" id="email" name="email" type="email" value={formData.email} onChange={handleChange} />
+                <div className="flex gap-2 mt-1.5 flex-wrap">
+                    {['@gmail.com', '@hotmail.com', '@yahoo.com', '@yahoo.com.br'].map(domain => (
+                        <button
+                            type="button"
+                            key={domain}
+                            onClick={() => handleEmailDomainClick(domain)}
+                            className="px-2 py-1 text-xs bg-pink-100 text-pink-700 rounded-full hover:bg-pink-200 transition-colors"
+                        >
+                            {domain}
+                        </button>
+                    ))}
+                </div>
+            </div>
+            <Input label="CPF" id="cpf" name="cpf" value={formData.cpf} onChange={handleChange} />
             <TextArea label="Observação" id="observation" name="observation" value={formData.observation} onChange={handleChange} />
             <div className="flex justify-end pt-4">
                 <Button type="submit">{client ? 'Atualizar Cliente' : 'Cadastrar Cliente'}</Button>
@@ -1655,10 +1700,6 @@ const StockManager: FC = () => {
 
     const handleAddItem = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newItem.name || !newItem.code) {
-            alert('Nome do produto e código são obrigatórios.');
-            return;
-        }
         await addStockItem({ ...newItem, quantity: parseInt(newItem.quantity, 10) || 0 });
         setNewItem({ name: '', size: '', code: '', quantity: '0' });
     };
@@ -1687,9 +1728,9 @@ const StockManager: FC = () => {
             <Card>
                 <h2 className="text-xl font-bold text-rose-800 mb-4">Adicionar Item ao Estoque 📦</h2>
                 <form onSubmit={handleAddItem} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-                    <Input label="Nome do Produto" name="name" value={newItem.name} onChange={handleNewItemChange} required />
+                    <Input label="Nome do Produto" name="name" value={newItem.name} onChange={handleNewItemChange} />
                     <Input label="Tamanho" name="size" value={newItem.size} onChange={handleNewItemChange} />
-                    <Input label="Código" name="code" type="number" value={newItem.code} onChange={handleNewItemChange} required />
+                    <Input label="Código" name="code" type="number" value={newItem.code} onChange={handleNewItemChange} />
                     <Input
                         label="Quantidade"
                         name="quantity"
@@ -1812,8 +1853,8 @@ const SaleForm: FC<{ editingSale?: Sale | null; onSaleSuccess: (sale: Sale, isEd
         const quantity = parseFloat(saleData.quantity) || 0;
         const unitPrice = parseFloat(saleData.unitPrice) || 0;
 
-        if(!saleData.clientId || !saleData.productName || quantity <= 0 || unitPrice < 0){
-            alert('Preencha todos os campos obrigatórios (Cliente, Produto, Quantidade e Valor).');
+        if (quantity <= 0) {
+            alert('A quantidade da venda deve ser maior que zero.');
             return;
         }
 
@@ -1839,18 +1880,18 @@ const SaleForm: FC<{ editingSale?: Sale | null; onSaleSuccess: (sale: Sale, isEd
             <h1 className="text-2xl font-bold text-rose-800 mb-6">{isEditing ? 'Editar Venda' : 'Cadastrar Venda'} 🛍️</h1>
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Select label="Cliente" name="clientId" value={saleData.clientId} onChange={handleChange} required>
+                    <Select label="Cliente" name="clientId" value={saleData.clientId} onChange={handleChange}>
                         <option value="">Selecione um cliente</option>
                         {clients.map(c => <option key={c.id} value={c.id}>{c.fullName}</option>)}
                     </Select>
-                    <Input label="Data da Venda" name="saleDate" type="date" value={saleData.saleDate} onChange={handleChange} required />
+                    <Input label="Data da Venda" name="saleDate" type="date" value={saleData.saleDate} onChange={handleChange} />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Input label="Código do Produto (opcional)" name="productCode" type="number" placeholder="Puxa do estoque" value={saleData.productCode} onChange={handleChange} />
-                    <Input label="Nome do Produto" name="productName" value={saleData.productName} onChange={handleChange} required />
+                    <Input label="Nome do Produto" name="productName" value={saleData.productName} onChange={handleChange} />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Input label="Quantidade" name="quantity" type="number" min="1" value={saleData.quantity} onChange={handleChange} required />
+                    <Input label="Quantidade" name="quantity" type="number" min="1" value={saleData.quantity} onChange={handleChange} />
                     <Input
                         label="Valor Unitário (R$)"
                         name="unitPrice"
@@ -1861,7 +1902,6 @@ const SaleForm: FC<{ editingSale?: Sale | null; onSaleSuccess: (sale: Sale, isEd
                         onChange={handleChange}
                         onFocus={(e) => e.target.value === '0' && setSaleData(prev => ({...prev, unitPrice: ''}))}
                         onBlur={(e) => e.target.value === '' && setSaleData(prev => ({...prev, unitPrice: '0'}))}
-                        required
                     />
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Valor Total</label>
@@ -1926,8 +1966,8 @@ const PaymentForm: FC<{
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if(!paymentData.clientId || Number(paymentData.amount) <= 0){
-            alert('Selecione um cliente e informe um valor maior que zero.');
+        if (Number(paymentData.amount) <= 0) {
+            alert('O valor do pagamento deve ser maior que zero.');
             return;
         }
         const paymentPayload = {
@@ -1948,7 +1988,7 @@ const PaymentForm: FC<{
          <Card>
             <h1 className="text-2xl font-bold text-rose-800 mb-6">{isEditing ? 'Editar Recebimento' : 'Receber Pagamento'} 💸</h1>
             <form onSubmit={handleSubmit} className="space-y-4 max-w-lg mx-auto">
-                <Select label="Cliente" name="clientId" value={paymentData.clientId} onChange={handleChange} required disabled={isEditing}>
+                <Select label="Cliente" name="clientId" value={paymentData.clientId} onChange={handleChange} disabled={isEditing}>
                     <option value="">Selecione uma cliente</option>
                     {clients.map(c => <option key={c.id} value={c.id}>{c.fullName}</option>)}
                 </Select>
@@ -1957,7 +1997,7 @@ const PaymentForm: FC<{
                         Saldo devedor atual: <span className="font-bold">{selectedClientBalance.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}</span>
                     </div>
                 )}
-                 <Input label="Data do Pagamento" name="paymentDate" type="date" value={paymentData.paymentDate} onChange={handleChange} required />
+                 <Input label="Data do Pagamento" name="paymentDate" type="date" value={paymentData.paymentDate} onChange={handleChange} />
                  <div>
                     <Input
                         label="Valor Recebido (R$)"
@@ -1969,7 +2009,6 @@ const PaymentForm: FC<{
                         onChange={handleChange}
                         onFocus={(e) => e.target.value === '0' && setPaymentData(prev => ({...prev, amount: ''}))}
                         onBlur={(e) => e.target.value === '' && setPaymentData(prev => ({...prev, amount: '0'}))}
-                        required
                     />
                      {selectedClientBalance !== null && selectedClientBalance > 0 && (
                         <button type="button" onClick={() => setPaymentData(prev => ({...prev, amount: String(selectedClientBalance)}))} className="text-sm text-pink-600 hover:underline mt-1">
