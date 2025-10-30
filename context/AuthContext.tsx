@@ -1,110 +1,107 @@
-import React, { createContext, useContext, ReactNode, useState, useEffect, useMemo } from 'react';
-import { User } from '../types';
+import React, { createContext, useContext, ReactNode, useCallback } from 'react';
 import useLocalStorage from '../hooks/useLocalStorage';
-
-// NOTE: This is a mock authentication system using localStorage.
-// Passwords are not encrypted. This is for demonstration purposes only.
-interface StoredUser extends User {
-    passwordHash: string;
-}
+import { User } from '../types';
 
 interface AuthContextType {
   currentUser: User | null;
-  users: User[]; // For admin panel
-  login: (username: string, pass: string) => Promise<void>;
+  users: User[];
+  login: (username: string, pass: string) => void;
   logout: () => void;
-  // FIX: Removed `gender` from the `addUser` function signature as it is not part of the `User` type.
-  addUser: (username: string, pass: string, firstName: string, lastName: string) => Promise<void>;
-  updatePassword: (userId: string, pass: string) => Promise<void>;
-  deleteUser: (userId: string) => Promise<void>;
-  isLoading: boolean;
+  addUser: (username: string, pass: string, firstName: string, lastName: string) => void;
+  updateUser: (user: Partial<Omit<User, 'password' | 'role' | 'id'>> & { id: string }) => void;
+  updatePassword: (userId: string, newPass: string, oldPass?: string) => void;
+  deleteUser: (userId: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const defaultAdminUser: StoredUser = {
-    id: 'admin-user',
-    username: 'admin',
-    password: 'admin',
-    passwordHash: 'admin',
-    role: 'admin',
-    // FIX: Removed `gender` property on line 31 as it does not exist in the `User` type.
-    firstName: 'Admin',
-    lastName: 'User',
-};
+const initialUsers: User[] = [
+    { id: '1', username: 'admin', password: 'admin', role: 'admin', firstName: 'Admin', lastName: 'Master', theme: 'default' },
+    { id: '2', username: 'ivone', password: 'ivone1234', role: 'user', firstName: 'Ivone', lastName: 'Silva', theme: 'default' },
+];
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [users, setUsers] = useLocalStorage<StoredUser[]>('users', [defaultAdminUser]);
+  const [users, setUsers] = useLocalStorage<User[]>('users', initialUsers);
   const [currentUser, setCurrentUser] = useLocalStorage<User | null>('currentUser', null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // This effect simply manages the loading state on initial app load.
-    // The useLocalStorage hook handles the actual data loading.
-    setIsLoading(false);
-  }, []);
-
-  const login = async (username: string, pass: string) => {
-    const user = users.find(u => u.username === username && u.passwordHash === pass);
+  
+  const login = useCallback((username: string, pass: string) => {
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === pass);
     if (user) {
-        const { passwordHash, ...userToStore } = user;
-        setCurrentUser(userToStore);
+        setCurrentUser(user);
     } else {
-        throw new Error("Invalid credentials");
+        throw new Error('Usuário ou senha inválidos.');
     }
-  };
+  }, [users, setCurrentUser]);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setCurrentUser(null);
-  };
+  }, [setCurrentUser]);
   
-  // FIX: Removed the `gender` parameter from the `addUser` function and the `gender` property from the new user object to match the User type.
-  const addUser = async (username: string, pass: string, firstName: string, lastName: string) => {
-    if (users.some(u => u.username === username)) {
-        throw new Error("Username already exists");
-    }
-    const newUser: StoredUser = {
-        id: crypto.randomUUID(),
-        username,
-        password: pass,
-        passwordHash: pass,
-        role: 'user',
-        firstName,
-        lastName,
-    };
-    setUsers(prev => [...prev, newUser]);
-  };
-  
-  const updatePassword = async (userId: string, pass: string) => {
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, password: pass, passwordHash: pass } : u));
-  };
+  const addUser = useCallback((username: string, pass: string, firstName: string, lastName: string) => {
+      if (users.some(u => u.username.toLowerCase() === username.toLowerCase())) {
+          throw new Error('Este nome de usuário já existe.');
+      }
+      const newUser: User = {
+          id: crypto.randomUUID(),
+          username,
+          password: pass,
+          role: 'user',
+          firstName,
+          lastName,
+          theme: 'default',
+      };
+      setUsers(prev => [...prev, newUser]);
+  }, [users, setUsers]);
 
-  const deleteUser = async (userId: string) => {
-      if (currentUser?.id === userId) {
-          throw new Error("Não é possível excluir o próprio usuário.");
+  const updateUser = useCallback((updatedUserData: Partial<Omit<User, 'password' | 'role' | 'id'>> & { id: string }) => {
+      setUsers(prev => prev.map(u => u.id === updatedUserData.id ? { ...u, ...updatedUserData } : u));
+      if (currentUser?.id === updatedUserData.id) {
+          setCurrentUser(prev => prev ? { ...prev, ...updatedUserData } : null);
+      }
+  }, [setUsers, currentUser, setCurrentUser]);
+  
+  const updatePassword = useCallback((userId: string, newPass: string, oldPass?: string) => {
+      setUsers(prev => {
+          const userIndex = prev.findIndex(u => u.id === userId);
+          if (userIndex === -1) {
+              throw new Error("Usuário não encontrado.");
+          }
+          const user = prev[userIndex];
+          
+          // If oldPass is provided, it's a user changing their own password, so we must verify it.
+          if (oldPass && user.password !== oldPass) {
+              throw new Error("A senha atual está incorreta.");
+          }
+          
+          // Admins can change passwords without the old one.
+          if (currentUser?.role !== 'admin' && !oldPass) {
+              throw new Error("Verificação de senha antiga necessária.");
+          }
+
+          const updatedUsers = [...prev];
+          updatedUsers[userIndex] = { ...user, password: newPass };
+          return updatedUsers;
+      });
+  }, [setUsers, currentUser]);
+
+  const deleteUser = useCallback((userId: string) => {
+      const userToDelete = users.find(u => u.id === userId);
+      if (userToDelete?.role === 'admin') {
+          throw new Error('Não é possível excluir o usuário administrador.');
       }
       setUsers(prev => prev.filter(u => u.id !== userId));
-  };
-  
-  // Expose users list without password hashes
-  const publicUsers = useMemo(() => {
-      if (!currentUser || currentUser.role !== 'admin') return [];
-      return users.map(u => {
-          const { passwordHash, ...publicUser } = u;
-          return publicUser;
-      });
-  }, [users, currentUser]);
+  }, [users, setUsers]);
 
 
   const value = {
     currentUser,
-    users: publicUsers,
+    users,
     login,
     logout,
     addUser,
+    updateUser,
     updatePassword,
     deleteUser,
-    isLoading,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

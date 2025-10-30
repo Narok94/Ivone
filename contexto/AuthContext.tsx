@@ -8,7 +8,7 @@ interface AuthContextType {
   login: (username: string, pass: string) => void;
   logout: () => void;
   addUser: (username: string, pass: string, firstName: string, lastName: string) => void;
-  updateUser: (user: Omit<User, 'password' | 'role' | 'id'> & { id: string }) => void;
+  updateUser: (user: Partial<Omit<User, 'password' | 'role' | 'id'>> & { id: string }) => void;
   updatePassword: (userId: string, newPass: string, oldPass?: string) => void;
   deleteUser: (userId: string) => void;
 }

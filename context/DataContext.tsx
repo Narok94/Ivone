@@ -63,35 +63,35 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsLoading(false);
   }, [currentUser, setData]);
 
-  const addClient = async (clientData: Omit<Client, 'id'>) => {
+  const addClient = useCallback(async (clientData: Omit<Client, 'id'>) => {
     const newClient: Client = { ...clientData, id: crypto.randomUUID() };
     setData(prev => ({ ...prev, clients: [...(prev.clients || []), newClient] }));
-  };
+  }, [setData]);
 
-  const updateClient = async (updatedClient: Client) => {
+  const updateClient = useCallback(async (updatedClient: Client) => {
     setData(prev => ({ ...prev, clients: (prev.clients || []).map(c => c.id === updatedClient.id ? updatedClient : c) }));
-  };
+  }, [setData]);
 
-  const deleteClient = async (clientId: string) => {
+  const deleteClient = useCallback(async (clientId: string) => {
     setData(prev => ({ ...prev, clients: (prev.clients || []).filter(c => c.id !== clientId) }));
-  };
+  }, [setData]);
   
-  const getClientById = (clientId: string) => (data.clients || []).find(c => c.id === clientId);
+  const getClientById = useCallback((clientId: string) => (data.clients || []).find(c => c.id === clientId), [data.clients]);
 
-  const addStockItem = async (itemData: Omit<StockItem, 'id'>) => {
+  const addStockItem = useCallback(async (itemData: Omit<StockItem, 'id'>) => {
     const newItem: StockItem = { ...itemData, id: crypto.randomUUID() };
     setData(prev => ({ ...prev, stockItems: [...(prev.stockItems || []), newItem] }));
-  };
+  }, [setData]);
 
-  const updateStockItemQuantity = async (itemId: string, newQuantity: number) => {
+  const updateStockItemQuantity = useCallback(async (itemId: string, newQuantity: number) => {
     setData(prev => ({ ...prev, stockItems: (prev.stockItems || []).map(item => item.id === itemId ? { ...item, quantity: newQuantity } : item) }));
-  };
+  }, [setData]);
   
-  const deleteStockItem = async (itemId: string) => {
+  const deleteStockItem = useCallback(async (itemId: string) => {
     setData(prev => ({ ...prev, stockItems: (prev.stockItems || []).filter(item => item.id !== itemId) }));
-  };
+  }, [setData]);
 
-  const addSale = async (saleData: Omit<Sale, 'id'|'total'>) => {
+  const addSale = useCallback(async (saleData: Omit<Sale, 'id'|'total'>) => {
     const newSale: Sale = { 
         ...saleData, 
         id: crypto.randomUUID(),
@@ -114,9 +114,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return { ...prev, sales: [...(prev.sales || []), newSale], stockItems: newStock };
     });
     return newSale;
-  };
+  }, [setData]);
   
-  const updateSale = async (updatedSale: Sale) => {
+  const updateSale = useCallback(async (updatedSale: Sale) => {
+    const finalSaleData = { 
+        ...updatedSale, 
+        total: parseFloat((updatedSale.quantity * updatedSale.unitPrice).toFixed(2))
+    };
+
     setData(prev => {
         const originalSale = (prev.sales || []).find(s => s.id === updatedSale.id);
         if (!originalSale) throw new Error("Venda original não encontrada");
@@ -140,20 +145,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 newStock[stockIndex] = { ...newStock[stockIndex], quantity: newQuantity };
             }
         }
-        
-        const finalSaleData = { 
-            ...updatedSale, 
-            total: parseFloat((updatedSale.quantity * updatedSale.unitPrice).toFixed(2))
-        };
 
         const newSales = (prev.sales || []).map(s => s.id === updatedSale.id ? finalSaleData : s);
         return { ...prev, sales: newSales, stockItems: newStock };
     });
 
-    return { ...updatedSale, total: parseFloat((updatedSale.quantity * updatedSale.unitPrice).toFixed(2)) };
-  };
+    return finalSaleData;
+  }, [setData]);
 
-  const deleteSale = async (saleId: string) => {
+  const deleteSale = useCallback(async (saleId: string) => {
      setData(prev => {
         const saleToDelete = (prev.sales || []).find(s => s.id === saleId);
         if (!saleToDelete) return prev;
@@ -169,20 +169,20 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const newSales = (prev.sales || []).filter(s => s.id !== saleId);
         return { ...prev, sales: newSales, stockItems: newStock };
     });
-  };
+  }, [setData]);
 
-  const addPayment = async (paymentData: Omit<Payment, 'id'>) => {
+  const addPayment = useCallback(async (paymentData: Omit<Payment, 'id'>) => {
     const newPayment: Payment = { ...paymentData, id: crypto.randomUUID() };
     setData(prev => ({ ...prev, payments: [...(prev.payments || []), newPayment] }));
-  };
+  }, [setData]);
   
-  const updatePayment = async (updatedPayment: Payment) => {
+  const updatePayment = useCallback(async (updatedPayment: Payment) => {
     setData(prev => ({ ...prev, payments: (prev.payments || []).map(p => p.id === updatedPayment.id ? updatedPayment : p) }));
-  };
+  }, [setData]);
 
-  const deletePayment = async (paymentId: string) => {
+  const deletePayment = useCallback(async (paymentId: string) => {
     setData(prev => ({ ...prev, payments: (prev.payments || []).filter(p => p.id !== paymentId) }));
-  };
+  }, [setData]);
 
   const clientBalances = useMemo(() => {
     const balances = new Map<string, number>();
@@ -194,12 +194,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return balances;
   }, [data.clients, data.sales, data.payments]);
   
-  const getRawData = async (userId: string): Promise<RawData> => {
+  const getRawData = useCallback(async (userId: string): Promise<RawData> => {
      const storedData = window.localStorage.getItem(`appData-${userId}`);
      return storedData ? JSON.parse(storedData) : initialData;
-  };
+  }, []);
   
-  const loadRawData = async (rawData: RawData, userId: string) => {
+  const loadRawData = useCallback(async (rawData: RawData, userId: string) => {
       if (rawData && Array.isArray(rawData.clients) && Array.isArray(rawData.stockItems) && Array.isArray(rawData.sales) && Array.isArray(rawData.payments)) {
         const dataKeyToLoad = `appData-${userId}`;
         window.localStorage.setItem(dataKeyToLoad, JSON.stringify(rawData));
@@ -211,7 +211,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       } else {
           throw new Error("Arquivo de backup inválido ou corrompido.");
       }
-  };
+  }, [currentUser, setData]);
 
   const value = {
     clients: data.clients || [], addClient, updateClient, deleteClient, getClientById,
