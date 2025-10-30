@@ -32,6 +32,10 @@ const KeyIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://w
 const DogIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M10 5.172C10 3.782 8.423 2.679 7.12 3.373A4 4 0 0 0 4.783 7.12C5.321 8.423 6.218 10 5.172 10H5a2 2 0 0 0-2 2v1a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-3a2 2 0 0 1 2-2h1.172c1.046 0 1.577-1.33 1.046-2.124A4.002 4.002 0 0 0 10 5.172Z"/><path d="M14 12a2 2 0 0 0-2-2h-2"/><path d="M16.63 12.87a2 2 0 1 1 2.24 2.24"/><path d="M18 16c-2 0-3-1-3-2V8a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1a2 2 0 0 0 2 2h1a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2.172c-1.046 0-1.577 1.33-1.046 2.124A4.002 4.002 0 0 1 18 16Z"/></svg>);
 const CatIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 5c.67 0 1.35.09 2 .26 1.78.47 2.94 2.13 2.5 3.92A4.015 4.015 0 0 1 12 10c-.67 0-1.35-.09-2-.26-1.78-.47-2.94-2.13-2.5-3.92A4.015 4.015 0 0 1 12 5Z"/><path d="M19.62 9.24c.32.44.58.93.78 1.46 1.34 3.54-1.26 7.3-4.4 7.3h-1c-1.33 0-2.5 .54-3.34 1.34-1.34 1.34-3.56 1.34-4.89 0-1.34-1.34-1.34-3.56 0-4.89 1.33-1.33 3.55-1.33 4.88 0A4.015 4.015 0 0 1 12 18c2.4 0 4.1-1.68 4.7-4 .37-1.42.3-2.82-.2-4.1-.17-.42-.38-.83-.62-1.22"/><path d="M18 10a1 1 0 1 0-2 0"/><path d="M6 10a1 1 0 1 0-2 0"/></svg>);
 const MenuIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>);
+const FileTextIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>);
+const CalendarIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>);
+const ChevronLeftIcon: FC<{className?: string}> = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m15 18-6-6 6-6"/></svg>;
+const ChevronRightIcon: FC<{className?: string}> = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m9 18 6-6-6-6"/></svg>;
 
 const CleanMagicIcon: FC<{className?: string}> = ({className}) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className={className}>
@@ -59,7 +63,7 @@ const useIsMobile = (breakpoint = 768): boolean => {
 };
 
 // --- VIEWS & FORMS (defined globally to be used by both layouts) ---
-type View = 'dashboard' | 'clients' | 'add_client' | 'add_sale' | 'stock' | 'add_payment' | 'reports' | 'history' | 'pending_payments' | 'sales_view' | 'all_payments' | 'client_detail' | 'manage_users';
+type View = 'dashboard' | 'clients' | 'add_client' | 'add_sale' | 'stock' | 'add_payment' | 'reports' | 'history' | 'pending_payments' | 'sales_view' | 'all_payments' | 'client_detail' | 'manage_users' | 'user_summary';
 
 // --- TOAST NOTIFICATION ---
 const Toast: FC<{ message: string; onClose: () => void }> = ({ message, onClose }) => {
@@ -210,8 +214,6 @@ const IvoneLayout: React.FC = () => {
   const [editingSale, setEditingSale] = useState<Sale | null>(null);
   const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
-  const [paymentSuggestion, setPaymentSuggestion] = useState<Sale | null>(null);
-  
   const [prefilledClientId, setPrefilledClientId] = useState<string | null>(null);
   const { logout, currentUser } = useAuth();
   const isMobile = useIsMobile();
@@ -240,11 +242,7 @@ const IvoneLayout: React.FC = () => {
   const handleSaleSuccess = (sale: Sale, isEditing: boolean) => {
       showToast(isEditing ? 'Venda atualizada com sucesso!' : 'Venda cadastrada com sucesso!');
       setEditingSale(null);
-      if (!isEditing) {
-          setPaymentSuggestion(sale);
-      } else {
-          setActiveView('dashboard');
-      }
+      setActiveView('dashboard');
   };
   
   const handlePaymentSuccess = (isEditing: boolean) => {
@@ -256,11 +254,6 @@ const IvoneLayout: React.FC = () => {
   const handleNavigate = (view: View, clientId?: string) => {
       setPrefilledClientId(clientId || null);
       setActiveView(view);
-  };
-  
-  const handleClosePaymentSuggestion = () => {
-      setPaymentSuggestion(null);
-      setActiveView('dashboard');
   };
 
   const renderView = () => {
@@ -292,11 +285,10 @@ const IvoneLayout: React.FC = () => {
   return (
     <div className="min-h-screen bg-pink-50 text-gray-800">
       {toastMessage && <Toast message={toastMessage} onClose={() => setToastMessage(null)} />}
-      {paymentSuggestion && <PaymentSuggestionModal sale={paymentSuggestion} onClose={handleClosePaymentSuggestion} showToast={showToast}/>}
-
+      
       <header className="bg-white/70 backdrop-blur-lg p-4 shadow-md flex items-center justify-center relative sticky top-0 z-10">
          <h1 className="text-lg sm:text-xl md:text-2xl font-extrabold tracking-tight bg-gradient-to-r from-pink-500 to-rose-500 text-transparent bg-clip-text whitespace-nowrap">
-            {isMaleTheme ? `Bem vindo ${currentUser?.username} 💪🔧` : `Bem vinda ${currentUser?.username} 💖✨`}
+            {isMaleTheme ? `Bem vindo ${currentUser?.firstName} 💪🔧` : `Bem vinda ${currentUser?.firstName} 💖✨`}
          </h1>
          <button onClick={logout} title="Sair" className="absolute right-4 p-2 rounded-full hover:bg-pink-100 text-pink-600 transition-colors">
             <LogOutIcon className="w-6 h-6"/>
@@ -335,10 +327,6 @@ const AdminLayout: FC = () => {
     const [activeView, setActiveView] = useState<View>('dashboard');
     const [toastMessage, setToastMessage] = useState<string | null>(null);
     const [isBackupModalOpen, setBackupModalOpen] = useState(false);
-    const [editingSale, setEditingSale] = useState<Sale | null>(null);
-    const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
-    const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
-    const [prefilledClientId, setPrefilledClientId] = useState<string | null>(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     const { logout, currentUser } = useAuth();
@@ -347,70 +335,24 @@ const AdminLayout: FC = () => {
         setToastMessage(message);
     };
 
-    const handleEditSale = (sale: Sale) => {
-        setEditingSale(sale);
-        setActiveView('add_sale');
-    };
-
-    const handleEditPayment = (payment: Payment) => {
-        setEditingPayment(payment);
-        setActiveView('add_payment');
-    };
-
-    const handleViewClient = (clientId: string) => {
-        setSelectedClientId(clientId);
-        setActiveView('client_detail');
-    };
-    
-    const handleNavigate = (view: View, clientId?: string) => {
-        setPrefilledClientId(clientId || null);
-        setActiveView(view);
-    };
-
-    const handleSaleSuccess = (sale: Sale, isEditing: boolean) => {
-      showToast(isEditing ? 'Venda atualizada!' : 'Venda cadastrada!');
-      setEditingSale(null);
-      setActiveView('sales_view');
-    };
-    
-    const handlePaymentSuccess = (isEditing: boolean) => {
-        showToast(isEditing ? 'Pagamento atualizado!' : 'Pagamento registrado!');
-        setEditingPayment(null);
-        setActiveView('all_payments');
-    };
-
     const renderView = () => {
         switch (activeView) {
             case 'dashboard': return <AdminDashboard />;
-            case 'clients': return <ManageClients setActiveView={setActiveView} onViewClient={handleViewClient} showToast={showToast} />;
-            case 'client_detail': return <ClientDetail clientId={selectedClientId!} onNavigate={handleNavigate} />;
-            case 'add_client': return ( <ClientForm onDone={() => { setActiveView('clients'); showToast('Cliente salvo!'); }} /> );
-            case 'add_sale': return <SaleForm editingSale={editingSale} onSaleSuccess={handleSaleSuccess} prefilledClientId={prefilledClientId} />;
-            case 'stock': return <StockManager />;
-            case 'add_payment': return <PaymentForm editingPayment={editingPayment} onPaymentSuccess={handlePaymentSuccess} prefilledClientId={prefilledClientId} />;
-            case 'reports': return <Reports />;
-            case 'history': return <History />;
-            case 'pending_payments': return <PendingPayments onViewClient={handleViewClient} />;
-            case 'sales_view': return <SalesView onEditSale={handleEditSale} showToast={showToast} />;
-            case 'all_payments': return <AllPayments onEditPayment={handleEditPayment} showToast={showToast} />;
             case 'manage_users': return <ManageUsers showToast={showToast} />;
+            case 'user_summary': return <UserSummaryView />;
             default: return <AdminDashboard />;
         }
     };
 
     const navItems = [
         { id: 'dashboard', icon: HomeIcon, title: 'Dashboard' },
-        { id: 'sales_view', icon: ShoppingCartIcon, title: 'Vendas' },
-        { id: 'all_payments', icon: CreditCardIcon, title: 'Recebimentos' },
-        { id: 'clients', icon: UsersIcon, title: 'Clientes' },
-        { id: 'stock', icon: ArchiveIcon, title: 'Estoque' },
-        { id: 'reports', icon: BarChartIcon, title: 'Relatórios' },
-        { id: 'manage_users', icon: UsersCogIcon, title: 'Usuários' },
+        { id: 'user_summary', icon: FileTextIcon, title: 'Resumo por Usuário' },
+        { id: 'manage_users', icon: UsersCogIcon, title: 'Gerenciar Usuários' },
         { id: 'backup_restore', icon: ShieldIcon, title: 'Backup/Restore' },
     ];
 
     return (
-        <div className="min-h-screen bg-slate-100 text-slate-800">
+        <div className="theme-admin-dark min-h-screen">
             {toastMessage && <Toast message={toastMessage} onClose={() => setToastMessage(null)} />}
             <BackupRestoreModal isOpen={isBackupModalOpen} onClose={() => setBackupModalOpen(false)} showToast={showToast}/>
             
@@ -464,7 +406,7 @@ const AdminLayout: FC = () => {
                         {navItems.find(i => i.id === activeView)?.title || 'Dashboard'}
                     </h2>
                 </header>
-                <main className="flex-1 p-6 overflow-y-auto">
+                <main className="flex-1 p-6 overflow-y-auto bg-slate-100">
                     {renderView()}
                 </main>
             </div>
@@ -484,6 +426,7 @@ const AdminDashboard: FC = () => {
     
     return (
         <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-slate-700">Visão Geral do Sistema</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <Card className="!bg-white">
                     <div className="flex items-center gap-4">
@@ -519,68 +462,52 @@ const AdminDashboard: FC = () => {
                     </div>
                 </Card>
             </div>
-            
-            <Card className="!bg-white">
-                <h3 className="font-bold text-lg mb-4 text-slate-700">Visão Geral dos Usuários</h3>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                        <thead>
-                            <tr className="bg-slate-50 uppercase text-xs font-semibold text-slate-600">
-                                <th className="p-3">Nome de Usuário</th>
-                                <th className="p-3">Permissão</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                            {users.map(user => (
-                                <tr key={user.id}>
-                                    <td className="p-3 font-medium text-slate-800">{user.username}</td>
-                                    <td className="p-3 text-slate-600">
-                                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                                            user.role === 'admin' 
-                                            ? 'bg-blue-100 text-blue-800' 
-                                            : 'bg-green-100 text-green-800'
-                                        }`}>
-                                            {user.role === 'admin' ? 'Administrador' : 'Usuário'}
-                                        </span>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </Card>
         </div>
     );
 }
 
 // --- MANAGE USERS (ADMIN ONLY) ---
 const ManageUsers: FC<{showToast: (msg: string) => void;}> = ({ showToast }) => {
-    const { users, addUser, updatePassword, deleteUser } = useAuth();
+    const { users, addUser, updateUser, updatePassword, deleteUser } = useAuth();
     const [isAddUserModalOpen, setAddUserModalOpen] = useState(false);
-    const [isEditUserModalOpen, setEditUserModalOpen] = useState<User | null>(null);
-    const [newUser, setNewUser] = useState({ username: '', password: '', gender: 'female' as 'male' | 'female' });
+    const [editingUser, setEditingUser] = useState<User | null>(null);
+    const [isPasswordModalOpen, setPasswordModalOpen] = useState<User | null>(null);
+
+    const [newUser, setNewUser] = useState({ username: '', password: '', gender: 'female' as 'male' | 'female', firstName: '', lastName: '' });
     const [newPassword, setNewPassword] = useState('');
 
     const handleAddUser = (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            addUser(newUser.username, newUser.password, newUser.gender);
+            addUser(newUser.username, newUser.password, newUser.gender, newUser.firstName, newUser.lastName);
             showToast(`Usuário ${newUser.username} criado!`);
-            setNewUser({ username: '', password: '', gender: 'female' });
+            setNewUser({ username: '', password: '', gender: 'female', firstName: '', lastName: '' });
             setAddUserModalOpen(false);
         } catch (error: any) {
             alert(error.message);
         }
     };
+    
+    const handleEditUser = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingUser) return;
+        try {
+            updateUser(editingUser);
+            showToast(`Usuário ${editingUser.username} atualizado!`);
+            setEditingUser(null);
+        } catch (error: any) {
+            alert(error.message)
+        }
+    };
 
     const handleUpdatePassword = (e: React.FormEvent) => {
         e.preventDefault();
-        if (isEditUserModalOpen && newPassword) {
+        if (isPasswordModalOpen && newPassword) {
             try {
-                updatePassword(isEditUserModalOpen.id, newPassword);
-                showToast(`Senha de ${isEditUserModalOpen.username} atualizada!`);
+                updatePassword(isPasswordModalOpen.id, newPassword);
+                showToast(`Senha de ${isPasswordModalOpen.username} atualizada!`);
                 setNewPassword('');
-                setEditUserModalOpen(null);
+                setPasswordModalOpen(null);
             } catch (error: any) {
                 alert(error.message);
             }
@@ -597,6 +524,8 @@ const ManageUsers: FC<{showToast: (msg: string) => void;}> = ({ showToast }) => 
             }
         }
     };
+    
+    const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
     return (
         <Card>
@@ -608,21 +537,22 @@ const ManageUsers: FC<{showToast: (msg: string) => void;}> = ({ showToast }) => 
                 <table className="w-full text-left">
                     <thead>
                         <tr className="bg-slate-100 uppercase text-sm font-semibold">
+                            <th className="p-3">Nome Completo</th>
                             <th className="p-3">Usuário</th>
-                            <th className="p-3">Permissão</th>
                             <th className="p-3">Gênero</th>
                             <th className="p-3 text-right">Ações</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {users.map(user => (
+                        {users.filter(u => u.role !== 'admin').map(user => (
                             <tr key={user.id} className="border-b">
-                                <td className="p-3 font-medium">{user.username}</td>
-                                <td className="p-3 capitalize">{user.role}</td>
+                                <td className="p-3 font-medium">{user.firstName} {user.lastName}</td>
+                                <td className="p-3">{user.username}</td>
                                 <td className="p-3 capitalize">{user.gender === 'male' ? 'Masculino' : 'Feminino'}</td>
                                 <td className="p-3 text-right">
                                     <div className="flex gap-2 justify-end">
-                                        <button onClick={() => setEditUserModalOpen(user)} className="text-blue-600 hover:text-blue-800" title="Mudar Senha"><KeyIcon /></button>
+                                        <button onClick={() => setEditingUser(user)} className="text-blue-600 hover:text-blue-800" title="Editar Usuário"><EditIcon /></button>
+                                        <button onClick={() => setPasswordModalOpen(user)} className="text-slate-600 hover:text-slate-800" title="Mudar Senha"><KeyIcon /></button>
                                         {user.role !== 'admin' && <button onClick={() => handleDeleteUser(user)} className="text-red-600 hover:text-red-800" title="Excluir"><TrashIcon /></button>}
                                     </div>
                                 </td>
@@ -633,8 +563,10 @@ const ManageUsers: FC<{showToast: (msg: string) => void;}> = ({ showToast }) => 
             </div>
 
             {/* Add User Modal */}
-            <Modal isOpen={isAddUserModalOpen} onClose={() => setAddUserModalOpen(false)} title="Criar Novo Usuário">
+            <Modal isOpen={isAddUserModalOpen} onClose={() => setAddUserModalOpen(false)} title="Criar Novo Usuário" contentClassName="theme-admin-dark">
                 <form onSubmit={handleAddUser} className="space-y-4">
+                    <Input label="Nome" id="newFirstName" value={newUser.firstName} onChange={e => setNewUser(p => ({...p, firstName: capitalize(e.target.value)}))} />
+                    <Input label="Sobrenome" id="newLastName" value={newUser.lastName} onChange={e => setNewUser(p => ({...p, lastName: capitalize(e.target.value)}))} />
                     <Input label="Nome de usuário" id="newUsername" value={newUser.username} onChange={e => setNewUser(p => ({...p, username: e.target.value}))} />
                     <Input label="Senha" id="newPassword" type="password" value={newUser.password} onChange={e => setNewUser(p => ({...p, password: e.target.value}))} />
                     <Select label="Gênero" id="newGender" value={newUser.gender} onChange={e => setNewUser(p => ({...p, gender: e.target.value as 'male' | 'female'}))}>
@@ -646,7 +578,23 @@ const ManageUsers: FC<{showToast: (msg: string) => void;}> = ({ showToast }) => 
             </Modal>
             
             {/* Edit User Modal */}
-            <Modal isOpen={!!isEditUserModalOpen} onClose={() => setEditUserModalOpen(null)} title={`Mudar senha de ${isEditUserModalOpen?.username}`}>
+            <Modal isOpen={!!editingUser} onClose={() => setEditingUser(null)} title={`Editar ${editingUser?.firstName}`} contentClassName="theme-admin-dark">
+                {editingUser && (
+                    <form onSubmit={handleEditUser} className="space-y-4">
+                        <Input label="Nome" id="editFirstName" value={editingUser.firstName} onChange={e => setEditingUser(p => p ? {...p, firstName: capitalize(e.target.value)} : null)} />
+                        <Input label="Sobrenome" id="editLastName" value={editingUser.lastName} onChange={e => setEditingUser(p => p ? {...p, lastName: capitalize(e.target.value)} : null)} />
+                        <Input label="Nome de usuário" id="editUsername" value={editingUser.username} onChange={e => setEditingUser(p => p ? {...p, username: e.target.value} : null)} />
+                        <Select label="Gênero" id="editGender" value={editingUser.gender} onChange={e => setEditingUser(p => p ? {...p, gender: e.target.value as 'male' | 'female'} : null)}>
+                            <option value="female">Feminino</option>
+                            <option value="male">Masculino</option>
+                        </Select>
+                        <Button type="submit">Atualizar Usuário</Button>
+                    </form>
+                )}
+            </Modal>
+
+            {/* Password Modal */}
+            <Modal isOpen={!!isPasswordModalOpen} onClose={() => setPasswordModalOpen(null)} title={`Mudar senha de ${isPasswordModalOpen?.username}`} contentClassName="theme-admin-dark">
                 <form onSubmit={handleUpdatePassword} className="space-y-4">
                     <Input label="Nova Senha" id="editPassword" type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} autoFocus/>
                     <Button type="submit">Atualizar Senha</Button>
@@ -810,7 +758,7 @@ const AIAssistant: FC<{ showToast: (message: string) => void }> = ({ showToast }
         
         const assistantName = isMaleTheme ? 'Rob' : 'Rebeca';
         const emojis = isMaleTheme ? '🤖🔧🚀' : '💖✨🎉';
-        const userGreetingName = currentUser?.username || 'pessoa incrível';
+        const userGreetingName = currentUser?.firstName || 'pessoa incrível';
         const systemInstruction = `Você é '${assistantName}', um assistente virtual SUPER extrovertido, divertido e simpático para o app 'Sistema de Vendas'. Seu objetivo é ajudar o usuário, ${userGreetingName}, a cadastrar clientes, vendas e pagamentos de uma forma leve e descontraída. Clientes existentes: ${clientNames}. Ações disponíveis: 1. 'add_client': Campos obrigatórios: fullName, address, phone, cpf. Campos opcionais: email, observation. 2. 'add_sale': Campos obrigatórios: clientName (deve ser um dos clientes existentes da lista), productName, quantity, unitPrice. Campos opcionais: observation. 3. 'add_payment': Campos obrigatórios: clientName (deve ser um dos clientes existentes da lista), amount. Campos opcionais: observation. COMO PROCEDER: Use uma linguagem bem humorada, muitos emojis ${emojis} e seja super proativo! Peça UMA informação de cada vez, como se estivesse batendo um papo. Quando tiver TODOS os campos obrigatórios para uma ação, responda APENAS com um JSON no seguinte formato: {"action": "action_name", "data": { ...dados... }}. NÃO adicione nenhum texto antes ou depois do JSON, seja direto ao ponto nessa hora! Se o usuário pedir para cancelar, diga algo como "Sem problemas! Missão abortada. 🚀 O que vamos fazer agora?". Se o usuário conversar sobre qualquer outra coisa, entre na brincadeira e responda de forma divertida antes de voltar ao foco. Ao cumprimentar, sempre use o nome do usuário (${userGreetingName}) e se apresente com entusiasmo!`;
 
         chatRef.current = ai.chats.create({
@@ -819,8 +767,8 @@ const AIAssistant: FC<{ showToast: (message: string) => void }> = ({ showToast }
         });
 
         const initialMessage = isMaleTheme
-            ? `E aí, ${currentUser?.username}! 🤘 Sou o Rob, seu parceiro robótico pra deixar tudo em ordem por aqui. O que a gente vai aprontar hoje? Cadastrar um cliente novo, registrar uma venda bombástica ou receber uma grana? Manda a braba! 🚀`
-            : `Oii, ${currentUser?.username}! 💖 Aqui é a Rebeca, sua assistente pessoal, pronta para deixar tudo organizado! Vamos começar? Me conta, vamos cadastrar uma cliente super especial, lançar uma venda incrível ou registrar um pagamento? Tô prontíssima! ✨`;
+            ? `E aí, ${currentUser?.firstName}! 🤘 Sou o Rob, seu parceiro robótico pra deixar tudo em ordem por aqui. O que a gente vai aprontar hoje? Cadastrar um cliente novo, registrar uma venda bombástica ou receber uma grana? Manda a braba! 🚀`
+            : `Oii, ${currentUser?.firstName}! 💖 Aqui é a Rebeca, sua assistente pessoal, pronta para deixar tudo organizado! Vamos começar? Me conta, vamos cadastrar uma cliente super especial, lançar uma venda incrível ou registrar um pagamento? Tô prontíssima! ✨`;
 
         setMessages([{ sender: 'ai', text: initialMessage }]);
         preloadGreetingAudio(initialMessage);
@@ -1210,7 +1158,7 @@ const BackupRestoreModal: FC<{isOpen: boolean; onClose: () => void; showToast: (
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Backup e Restauração de Dados">
+        <Modal isOpen={isOpen} onClose={onClose} title="Backup e Restauração de Dados" contentClassName="theme-admin-dark">
             <div className="space-y-6">
                 <div>
                     <h3 className="font-bold text-lg text-gray-700 mb-2">Fazer Backup</h3>
@@ -1218,7 +1166,7 @@ const BackupRestoreModal: FC<{isOpen: boolean; onClose: () => void; showToast: (
                     <div className="space-y-4">
                         <Select label="Usuário para Backup" id="user-backup" value={selectedUserForBackup} onChange={e => setSelectedUserForBackup(e.target.value)}>
                             <option value="">Selecione um usuário...</option>
-                            {users.map(user => <option key={user.id} value={user.id}>{user.username}</option>)}
+                            {users.map(user => <option key={user.id} value={user.id}>{user.firstName} {user.lastName} ({user.username})</option>)}
                         </Select>
                         <Button onClick={handleBackup} disabled={!selectedUserForBackup}>Baixar Arquivo de Backup</Button>
                     </div>
@@ -1232,7 +1180,7 @@ const BackupRestoreModal: FC<{isOpen: boolean; onClose: () => void; showToast: (
                     <div className="space-y-4">
                         <Select label="Restaurar para o Usuário" id="user-restore" value={selectedUserForRestore} onChange={e => setSelectedUserForRestore(e.target.value)}>
                             <option value="">Selecione um usuário...</option>
-                            {users.map(user => <option key={user.id} value={user.id}>{user.username}</option>)}
+                            {users.map(user => <option key={user.id} value={user.id}>{user.firstName} {user.lastName} ({user.username})</option>)}
                         </Select>
                         <Button onClick={handleRestoreClick} variant="secondary" disabled={!selectedUserForRestore}>Selecionar Arquivo para Restaurar</Button>
                     </div>
@@ -1242,64 +1190,6 @@ const BackupRestoreModal: FC<{isOpen: boolean; onClose: () => void; showToast: (
         </Modal>
     )
 }
-
-// --- PAYMENT SUGGESTION MODAL ---
-const PaymentSuggestionModal: FC<{sale: Sale; onClose: () => void; showToast: (message: string) => void}> = ({ sale, onClose, showToast }) => {
-    const { addPayment } = useData();
-    const [partialAmount, setPartialAmount] = useState('');
-    const [showPartialInput, setShowPartialInput] = useState(false);
-
-    const handleRegisterPayment = async (amount: number) => {
-        await addPayment({
-            clientId: sale.clientId,
-            paymentDate: new Date().toISOString().split('T')[0],
-            amount: amount,
-            observation: `Referente à venda #${sale.id.substring(0,6)}`,
-        });
-        showToast(`Pagamento de ${amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} registrado!`);
-        onClose();
-    };
-
-    const handlePartialSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        const amount = parseFloat(partialAmount);
-        if (amount > 0) {
-            handleRegisterPayment(amount);
-        }
-    };
-
-    return (
-        <Modal isOpen={true} onClose={onClose} title="Registrar Pagamento?">
-            <div className="text-center">
-                <p className="text-lg mb-6">A venda de <span className="font-bold">{sale.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span> foi registrada. O pagamento já foi recebido?</p>
-                {!showPartialInput ? (
-                    <div className="flex justify-center gap-4">
-                        <Button onClick={() => handleRegisterPayment(sale.total)}>Sim, valor total</Button>
-                        <Button variant="secondary" onClick={() => setShowPartialInput(true)}>Sim, valor parcial</Button>
-                        <Button variant="secondary" onClick={onClose}>Não, registrar depois</Button>
-                    </div>
-                ) : (
-                    <form onSubmit={handlePartialSubmit} className="space-y-4">
-                        <Input 
-                            label="Valor Parcial Recebido (R$)" 
-                            id="partialAmount" 
-                            type="number" 
-                            step="0.01" 
-                            value={partialAmount} 
-                            onChange={(e) => setPartialAmount(e.target.value)} 
-                            autoFocus
-                        />
-                        <div className="flex justify-center gap-4">
-                            <Button type="submit">Registrar Parcial</Button>
-                            <Button variant="secondary" onClick={() => setShowPartialInput(false)}>Cancelar</Button>
-                        </div>
-                    </form>
-                )}
-            </div>
-        </Modal>
-    );
-};
-
 
 // --- HEADER SUMMARY ---
 const HeaderSummary: FC<{ setActiveView: (view: View) => void }> = ({ setActiveView }) => {
@@ -1395,6 +1285,20 @@ const Dashboard: FC<{ onNavigate: (view: View, clientId?: string) => void; }> = 
     );
 };
 
+const groupSalesByMonth = (sales: Sale[]) => {
+    const groups = sales.reduce((acc, sale) => {
+        const date = new Date(sale.saleDate + 'T00:00:00'); // Ensure timezone consistency
+        const monthYear = date.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+        const capitalizedMonth = monthYear.charAt(0).toUpperCase() + monthYear.slice(1);
+        
+        if (!acc[capitalizedMonth]) {
+            acc[capitalizedMonth] = [];
+        }
+        acc[capitalizedMonth].push(sale);
+        return acc;
+    }, {} as Record<string, Sale[]>);
+    return Object.entries(groups);
+};
 
 // --- SALES VIEW ---
 const SalesView: FC<{ onEditSale: (sale: Sale) => void; showToast: (msg: string) => void; }> = ({ onEditSale, showToast }) => {
@@ -1446,6 +1350,8 @@ const SalesView: FC<{ onEditSale: (sale: Sale) => void; showToast: (msg: string)
             .sort((a, b) => new Date(b.saleDate).getTime() - new Date(a.saleDate).getTime());
     }, [sales, selectedClient]);
 
+    const groupedSales = useMemo(() => groupSalesByMonth(clientSales), [clientSales]);
+
     const handleDelete = async (e: React.MouseEvent, saleId: string) => {
         e.stopPropagation();
         if (window.confirm('Tem certeza que deseja excluir esta venda? O estoque será ajustado.')) {
@@ -1469,33 +1375,40 @@ const SalesView: FC<{ onEditSale: (sale: Sale) => void; showToast: (msg: string)
                     </Button>
                 </div>
                 <h1 className="text-2xl font-bold text-rose-800 mb-4">Extrato de Vendas: {selectedClient.fullName}</h1>
-                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-                    {clientSales.length > 0 ? clientSales.map(sale => {
-                        const status = salePaymentStatus.get(sale.id) || 'unpaid';
-                        const statusClasses = {
-                            paid: { bg: 'bg-emerald-50', border: 'border-emerald-100', text: 'text-emerald-600' },
-                            partial: { bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-600' },
-                            unpaid: { bg: 'bg-rose-50', border: 'border-rose-100', text: 'text-rose-600' },
-                        };
-                        const currentStatusStyle = statusClasses[status];
-                        
-                        return (
-                            <div key={sale.id} className={`p-4 ${currentStatusStyle.bg} ${currentStatusStyle.border} rounded-2xl flex justify-between items-center flex-wrap gap-2`}>
-                                <div className="flex-grow">
-                                    <p className="font-bold text-gray-700">{sale.productName}</p>
-                                    <p className="text-sm text-gray-600">{sale.quantity}x {sale.unitPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
-                                    <p className="text-xs text-gray-500">{new Date(sale.saleDate).toLocaleDateString('pt-BR')}</p>
-                                </div>
-                                <div className="flex flex-col items-end justify-center ml-4">
-                                    <p className={`font-bold ${currentStatusStyle.text} whitespace-nowrap`}>{sale.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
-                                    <div className="flex gap-3 mt-2">
-                                        <button onClick={(e) => handleEdit(e, sale)} className="text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-blue-100 transition-colors" aria-label="Editar venda"><EditIcon/></button>
-                                        <button onClick={(e) => handleDelete(e, sale.id)} className="text-red-600 hover:text-red-800 p-1 rounded-full hover:bg-red-100 transition-colors" aria-label="Excluir venda"><TrashIcon/></button>
+                <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
+                    {clientSales.length > 0 ? groupedSales.map(([month, salesInMonth]) => (
+                        <div key={month}>
+                            <h3 className="font-bold text-gray-500 mb-2 sticky top-0 bg-white/80 backdrop-blur-sm py-1">{month}</h3>
+                            <div className="space-y-4">
+                            {salesInMonth.map(sale => {
+                                const status = salePaymentStatus.get(sale.id) || 'unpaid';
+                                const statusClasses = {
+                                    paid: { bg: 'bg-emerald-50', border: 'border-emerald-100', text: 'text-emerald-600' },
+                                    partial: { bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-600' },
+                                    unpaid: { bg: 'bg-rose-50', border: 'border-rose-100', text: 'text-rose-600' },
+                                };
+                                const currentStatusStyle = statusClasses[status];
+                                
+                                return (
+                                    <div key={sale.id} className={`p-4 ${currentStatusStyle.bg} ${currentStatusStyle.border} rounded-2xl flex justify-between items-center flex-wrap gap-2`}>
+                                        <div className="flex-grow">
+                                            <p className="font-bold text-gray-700">{sale.productName}</p>
+                                            <p className="text-sm text-gray-600">{sale.quantity}x {sale.unitPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                                            <p className="text-xs text-gray-500">{new Date(sale.saleDate + 'T00:00:00').toLocaleDateString('pt-BR')}</p>
+                                        </div>
+                                        <div className="flex flex-col items-end justify-center ml-4">
+                                            <p className={`font-bold ${currentStatusStyle.text} whitespace-nowrap`}>{sale.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                                            <div className="flex gap-3 mt-2">
+                                                <button onClick={(e) => handleEdit(e, sale)} className="text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-blue-100 transition-colors" aria-label="Editar venda"><EditIcon/></button>
+                                                <button onClick={(e) => handleDelete(e, sale.id)} className="text-red-600 hover:text-red-800 p-1 rounded-full hover:bg-red-100 transition-colors" aria-label="Excluir venda"><TrashIcon/></button>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
+                                );
+                            })}
                             </div>
-                        );
-                    }) : (
+                        </div>
+                    )) : (
                         <EmptyState icon={ShoppingCartIcon} title="Nenhuma venda encontrada" message={`${selectedClient.fullName} ainda não tem nenhuma compra registrada.`} />
                     )}
                 </div>
@@ -1613,7 +1526,7 @@ const AllPayments: FC<{ onEditPayment: (payment: Payment) => void; showToast: (m
                                 <div className="flex-grow">
                                     <p className="font-bold text-gray-700">Pagamento recebido</p>
                                     {payment.observation && <p className="text-sm text-gray-500">{payment.observation}</p>}
-                                    <p className="text-xs text-gray-500">{new Date(payment.paymentDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                                    <p className="text-xs text-gray-500">{new Date(payment.paymentDate + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
                                 </div>
                                 <div className="flex flex-col items-end justify-center ml-4">
                                     <p className="font-bold text-emerald-600 whitespace-nowrap">+{payment.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
@@ -2385,11 +2298,45 @@ const Reports: FC = () => {
     );
 };
 
+type Transaction = (Sale & { type: 'sale' }) | (Payment & { type: 'payment' });
+
+const groupByDate = (transactions: Transaction[]) => {
+    const groups = transactions.reduce((groups, tx) => {
+        const date = (tx.type === 'sale' ? tx.saleDate : tx.paymentDate).split('T')[0];
+        if (!groups[date]) {
+            groups[date] = [];
+        }
+        groups[date].push(tx);
+        return groups;
+    }, {} as Record<string, Transaction[]>);
+
+    return Object.entries(groups).sort(([dateA], [dateB]) => new Date(dateB).getTime() - new Date(dateA).getTime());
+};
+
+const formatDateHeader = (dateString: string) => {
+    const date = new Date(dateString + 'T00:00:00');
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    if (date.toDateString() === today.toDateString()) return 'Hoje';
+    if (date.toDateString() === yesterday.toDateString()) return 'Ontem';
+    
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+};
+
 // --- HISTORY ---
 const History: FC = () => {
     const { sales, payments, getClientById } = useData();
+    const [filteredDate, setFilteredDate] = useState<string | null>(null);
+    const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
-    type Transaction = (Sale & { type: 'sale' }) | (Payment & { type: 'payment' });
+    const highlightedDates = useMemo(() => {
+      const dates = new Set<string>();
+      sales.forEach(s => dates.add(new Date(s.saleDate + 'T00:00:00').toISOString().split('T')[0]));
+      payments.forEach(p => dates.add(new Date(p.paymentDate + 'T00:00:00').toISOString().split('T')[0]));
+      return dates;
+    }, [sales, payments]);
     
     const transactions = useMemo(() => {
         const allTransactions: Transaction[] = [
@@ -2397,49 +2344,188 @@ const History: FC = () => {
             ...payments.map(p => ({ ...p, type: 'payment' as const }))
         ];
         
-        return allTransactions.sort((a, b) => {
+        const sorted = allTransactions.sort((a, b) => {
             const dateA = new Date(a.type === 'sale' ? a.saleDate : a.paymentDate);
             const dateB = new Date(b.type === 'sale' ? b.saleDate : b.paymentDate);
             return dateB.getTime() - dateA.getTime();
         });
-    }, [sales, payments]);
+
+        if (filteredDate) {
+            return sorted.filter(tx => {
+                const txDate = (tx.type === 'sale' ? tx.saleDate : tx.paymentDate).split('T')[0];
+                return txDate === filteredDate;
+            });
+        }
+        return sorted;
+
+    }, [sales, payments, filteredDate]);
+
+    const groupedTransactions = useMemo(() => groupByDate(transactions), [transactions]);
 
     return (
         <Card>
-            <h1 className="text-2xl font-bold text-rose-800 mb-6">Histórico de Transações 📜</h1>
+            <div className="flex justify-between items-center mb-6 flex-wrap gap-2">
+                <h1 className="text-2xl font-bold text-rose-800">Histórico de Transações 📜</h1>
+                <div className="flex items-center gap-2">
+                   {filteredDate && <Button variant="secondary" onClick={() => setFilteredDate(null)}>Limpar Filtro</Button>}
+                   <Button onClick={() => setIsCalendarOpen(true)}>Filtrar por data</Button>
+                </div>
+            </div>
+
+            <Modal isOpen={isCalendarOpen} onClose={() => setIsCalendarOpen(false)} title="Selecione uma data">
+                <Calendar
+                    highlightedDates={highlightedDates}
+                    onDateSelect={(date) => {
+                        setFilteredDate(date);
+                        setIsCalendarOpen(false);
+                    }}
+                />
+            </Modal>
+
             {transactions.length > 0 ? (
-                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-                    {transactions.map(tx => {
-                        const client = getClientById(tx.clientId);
-                        if (tx.type === 'sale') {
-                            return (
-                                <div key={`sale-${tx.id}`} className="p-4 bg-rose-50 border border-rose-100 rounded-2xl flex justify-between items-start">
-                                    <div>
-                                        <p className="font-bold text-gray-700">Venda para {client?.fullName || 'Cliente Removido'}</p>
-                                        <p className="text-sm text-gray-600">{tx.quantity}x {tx.productName}</p>
-                                        <p className="text-xs text-gray-500">{new Date(tx.saleDate).toLocaleDateString('pt-BR')}</p>
-                                    </div>
-                                    <p className="font-bold text-rose-600">-{tx.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
-                                </div>
-                            )
-                        } else {
-                            return (
-                                 <div key={`payment-${tx.id}`} className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex justify-between items-start">
-                                    <div>
-                                        <p className="font-bold text-gray-700">Pagamento de {client?.fullName || 'Cliente Removido'}</p>
-                                        <p className="text-xs text-gray-500">{new Date(tx.paymentDate).toLocaleDateString('pt-BR')}</p>
-                                    </div>
-                                    <p className="font-bold text-emerald-600">+{tx.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
-                                </div>
-                            )
-                        }
-                    })}
+                <div className="flow-root max-h-[60vh] overflow-y-auto pr-4 -mr-4">
+                  <ul className="-mb-8">
+                    {groupedTransactions.map(([date, txs], groupIndex) => (
+                      <li key={date}>
+                        <div className="relative pb-8">
+                          {groupIndex !== groupedTransactions.length - 1 ? <span className="absolute left-5 top-5 -ml-px h-full w-0.5 bg-pink-200" aria-hidden="true" /> : null}
+                          <div className="relative flex items-start space-x-4">
+                            <div>
+                              <div className="h-10 w-10 rounded-full bg-pink-500 flex items-center justify-center ring-8 ring-pink-50">
+                                <CalendarIcon className="h-5 w-5 text-white" />
+                              </div>
+                            </div>
+                            <div className="min-w-0 flex-1 pt-1.5">
+                              <p className="text-sm font-semibold text-gray-500">{formatDateHeader(date)}</p>
+                              <div className="mt-2 space-y-3">
+                                {txs.map(tx => {
+                                    const client = getClientById(tx.clientId);
+                                    if (tx.type === 'sale') {
+                                        return (
+                                            <div key={`sale-${tx.id}`} className="p-3 bg-white border border-gray-100 rounded-2xl flex items-center gap-4">
+                                                <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center flex-shrink-0">
+                                                    <ShoppingCartIcon className="w-5 h-5 text-rose-500" />
+                                                </div>
+                                                <div className="flex-grow">
+                                                    <p className="font-semibold text-gray-800">{tx.productName}</p>
+                                                    <p className="text-sm text-gray-500">Venda para {client?.fullName || 'Cliente Removido'}</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="font-bold text-rose-600">-{tx.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                                                    <p className="text-xs text-gray-400">{tx.quantity} un.</p>
+                                                </div>
+                                            </div>
+                                        )
+                                    } else {
+                                        return (
+                                             <div key={`payment-${tx.id}`} className="p-3 bg-white border border-gray-100 rounded-2xl flex items-center gap-4">
+                                                 <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                                                    <CreditCardIcon className="w-5 h-5 text-emerald-500" />
+                                                </div>
+                                                <div className="flex-grow">
+                                                    <p className="font-semibold text-gray-800">Pagamento Recebido</p>
+                                                    <p className="text-sm text-gray-500">De {client?.fullName || 'Cliente Removido'}</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="font-bold text-emerald-600">+{tx.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                                                </div>
+                                            </div>
+                                        )
+                                    }
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
             ) : (
-                <EmptyState icon={HistoryIcon} title="Nenhuma transação" message="Todas as suas vendas e pagamentos aparecerão aqui." />
+                <EmptyState icon={HistoryIcon} title={filteredDate ? "Nenhuma transação nesta data" : "Nenhuma transação"} message={filteredDate ? "Tente limpar o filtro ou escolher outra data." : "Todas as suas vendas e pagamentos aparecerão aqui."} />
             )}
         </Card>
     );
+};
+
+
+// --- CALENDAR COMPONENT ---
+const Calendar: FC<{ onDateSelect: (date: string) => void; highlightedDates: Set<string>; }> = ({ onDateSelect, highlightedDates }) => {
+    const [currentDate, setCurrentDate] = useState(new Date());
+    const weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+    const changeMonth = (amount: number) => {
+        setCurrentDate(prev => {
+            const newDate = new Date(prev);
+            newDate.setMonth(newDate.getMonth() + amount);
+            return newDate;
+        });
+    };
+
+    const renderCalendar = () => {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const firstDayOfMonth = new Date(year, month, 1).getDay();
+
+        const blanks = Array(firstDayOfMonth).fill(null);
+        const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+        const today = new Date();
+        const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
+
+        return [...blanks, ...days].map((day, index) => {
+            if (!day) return <div key={`blank-${index}`} className="w-10 h-10"></div>;
+
+            const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const isHighlighted = highlightedDates.has(dateString);
+            const isToday = isCurrentMonth && day === today.getDate();
+
+            return (
+                <div key={day} className="flex justify-center items-center">
+                    <button
+                        onClick={() => onDateSelect(dateString)}
+                        className={`w-10 h-10 rounded-full flex flex-col justify-center items-center transition-colors relative ${isToday ? 'bg-pink-500 text-white font-bold' : 'hover:bg-pink-100'}`}
+                    >
+                        {day}
+                        {isHighlighted && <div className={`absolute bottom-1.5 w-1.5 h-1.5 rounded-full ${isToday ? 'bg-white' : 'bg-pink-500'}`}></div>}
+                    </button>
+                </div>
+            );
+        });
+    };
+
+    return (
+        <div>
+            <div className="flex justify-between items-center mb-4">
+                <button onClick={() => changeMonth(-1)} className="p-2 rounded-full hover:bg-gray-100"><ChevronLeftIcon className="w-5 h-5"/></button>
+                <h3 className="font-bold text-lg text-gray-800">{currentDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}</h3>
+                <button onClick={() => changeMonth(1)} className="p-2 rounded-full hover:bg-gray-100"><ChevronRightIcon className="w-5 h-5"/></button>
+            </div>
+            <div className="grid grid-cols-7 gap-y-2 text-center">
+                {weekdays.map(day => <div key={day} className="font-medium text-xs text-gray-500">{day}</div>)}
+                {renderCalendar()}
+            </div>
+        </div>
+    );
+};
+
+
+type ClientTransaction = (Sale & { type: 'sale' }) | (Payment & { type: 'payment' });
+
+const groupClientTransactionsByMonth = (transactions: ClientTransaction[]) => {
+    const groups = transactions.reduce((acc, tx) => {
+        const date = new Date(tx.type === 'sale' ? tx.saleDate : tx.paymentDate);
+        const monthYear = date.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+        const capitalizedMonth = monthYear.charAt(0).toUpperCase() + monthYear.slice(1);
+
+        if (!acc[capitalizedMonth]) {
+            acc[capitalizedMonth] = [];
+        }
+        acc[capitalizedMonth].push(tx);
+        return acc;
+    }, {} as Record<string, ClientTransaction[]>);
+    return Object.entries(groups);
 };
 
 // --- CLIENT DETAIL ---
@@ -2449,8 +2535,6 @@ const ClientDetail: FC<{ clientId: string; onNavigate: (view: View, clientId?: s
 
     const client = getClientById(clientId);
     const balance = clientBalances.get(clientId) || 0;
-
-    type ClientTransaction = (Sale & { type: 'sale' }) | (Payment & { type: 'payment' });
     
     const salePaymentStatus = useMemo(() => {
         const statusMap = new Map<string, 'paid' | 'partial' | 'unpaid'>();
@@ -2489,6 +2573,8 @@ const ClientDetail: FC<{ clientId: string; onNavigate: (view: View, clientId?: s
         });
     }, [sales, payments, clientId]);
 
+    const groupedTransactions = useMemo(() => groupClientTransactionsByMonth(transactions), [transactions]);
+
     if (!client) {
         return <Card><p className="text-center text-red-500">Cliente não encontrado.</p></Card>;
     }
@@ -2519,38 +2605,45 @@ const ClientDetail: FC<{ clientId: string; onNavigate: (view: View, clientId?: s
             <Card>
                 <h2 className="text-xl font-bold text-rose-800 mb-4">Extrato do Cliente</h2>
                 {transactions.length > 0 ? (
-                    <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2">
-                        {transactions.map(tx => {
-                            if (tx.type === 'sale') {
-                                const status = salePaymentStatus.get(tx.id) || 'unpaid';
-                                const statusClasses = {
-                                    paid: { bg: 'bg-emerald-50', border: 'border-emerald-100', text: 'text-emerald-600' },
-                                    partial: { bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-600' },
-                                    unpaid: { bg: 'bg-rose-50', border: 'border-rose-100', text: 'text-rose-600' },
-                                };
-                                const currentStatusStyle = statusClasses[status];
-                                
-                                return (
-                                <div key={`sale-${tx.id}`} className={`p-3 ${currentStatusStyle.bg} ${currentStatusStyle.border} rounded-xl flex justify-between items-center`}>
-                                    <div>
-                                        <p className="font-semibold text-gray-800">{tx.productName} (x{tx.quantity})</p>
-                                        <p className="text-xs text-gray-500">{new Date(tx.saleDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
-                                    </div>
-                                    <p className={`font-bold ${currentStatusStyle.text}`}>-{tx.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                    <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2">
+                        {groupedTransactions.map(([month, txsInMonth]) => (
+                            <div key={month}>
+                                <h3 className="font-bold text-gray-500 mb-2 sticky top-0 bg-white/80 backdrop-blur-sm py-1">{month}</h3>
+                                <div className="space-y-3">
+                                {txsInMonth.map(tx => {
+                                    if (tx.type === 'sale') {
+                                        const status = salePaymentStatus.get(tx.id) || 'unpaid';
+                                        const statusClasses = {
+                                            paid: { bg: 'bg-emerald-50', border: 'border-emerald-100', text: 'text-emerald-600' },
+                                            partial: { bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-600' },
+                                            unpaid: { bg: 'bg-rose-50', border: 'border-rose-100', text: 'text-rose-600' },
+                                        };
+                                        const currentStatusStyle = statusClasses[status];
+                                        
+                                        return (
+                                        <div key={`sale-${tx.id}`} className={`p-3 ${currentStatusStyle.bg} ${currentStatusStyle.border} rounded-xl flex justify-between items-center`}>
+                                            <div>
+                                                <p className="font-semibold text-gray-800">{tx.productName} (x{tx.quantity})</p>
+                                                <p className="text-xs text-gray-500">{new Date(tx.saleDate + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                                            </div>
+                                            <p className={`font-bold ${currentStatusStyle.text}`}>-{tx.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                                        </div>
+                                        );
+                                    } else {
+                                        return (
+                                        <div key={`payment-${tx.id}`} className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex justify-between items-center">
+                                            <div>
+                                                <p className="font-semibold text-gray-800">Pagamento Recebido</p>
+                                                <p className="text-xs text-gray-500">{new Date(tx.paymentDate + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                                            </div>
+                                            <p className="font-bold text-emerald-600">+{tx.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                                        </div>
+                                        )
+                                    }
+                                })}
                                 </div>
-                                );
-                            } else {
-                                return (
-                                <div key={`payment-${tx.id}`} className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex justify-between items-center">
-                                    <div>
-                                        <p className="font-semibold text-gray-800">Pagamento Recebido</p>
-                                        <p className="text-xs text-gray-500">{new Date(tx.paymentDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
-                                    </div>
-                                    <p className="font-bold text-emerald-600">+{tx.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
-                                </div>
-                                )
-                            }
-                        })}
+                            </div>
+                        ))}
                     </div>
                 ) : (
                     <EmptyState icon={HistoryIcon} title="Nenhuma transação" message="Este cliente ainda não possui vendas ou pagamentos registrados." />
@@ -2562,5 +2655,152 @@ const ClientDetail: FC<{ clientId: string; onNavigate: (view: View, clientId?: s
         </div>
     );
 };
+
+interface RawData {
+  clients: Client[];
+  stockItems: StockItem[];
+  sales: Sale[];
+  payments: Payment[];
+}
+
+// --- USER DETAIL SUMMARY (ADMIN) ---
+const UserDetailSummary: FC<{ user: User }> = ({ user }) => {
+    const { getRawData } = useData();
+    const [userData, setUserData] = useState<RawData | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const loadData = async () => {
+            setIsLoading(true);
+            try {
+                const data = await getRawData(user.id);
+                setUserData(data);
+            } catch (error) {
+                console.error("Failed to load user data:", error);
+                setUserData(null);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        loadData();
+    }, [user.id, getRawData]);
+
+    const stats = useMemo(() => {
+        if (!userData) return { totalSales: 0, totalReceived: 0, totalPending: 0, clientCount: 0 };
+        const totalSales = userData.sales.reduce((sum, s) => sum + s.total, 0);
+        const totalReceived = userData.payments.reduce((sum, p) => sum + p.amount, 0);
+        return {
+            totalSales,
+            totalReceived,
+            totalPending: totalSales - totalReceived,
+            clientCount: userData.clients.length,
+        };
+    }, [userData]);
+
+    if (isLoading) {
+        return <Card><p className="text-center">Carregando dados do usuário...</p></Card>;
+    }
+
+    if (!userData) {
+        return <Card><p className="text-center text-red-500">Não foi possível carregar os dados para este usuário.</p></Card>;
+    }
+    
+    const summaryItems = [
+        { title: 'Clientes', value: stats.clientCount, icon: UsersIcon },
+        { title: 'Vendas Totais', value: stats.totalSales.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), icon: TrendingUpIcon },
+        { title: 'Total Recebido', value: stats.totalReceived.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), icon: WalletIcon },
+        { title: 'Pendente', value: stats.totalPending.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), icon: ClockIcon },
+    ];
+
+    return (
+        <div className="mt-6 space-y-6">
+            <h2 className="text-2xl font-bold text-slate-700">Resumo de {user.firstName} {user.lastName}</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {summaryItems.map(item => (
+                    <Card key={item.title} className="!bg-white">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-slate-100 rounded-full">
+                                <item.icon className="w-6 h-6 text-slate-600"/>
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-slate-500">{item.title}</p>
+                                <p className="text-2xl font-bold text-slate-800">{item.value}</p>
+                            </div>
+                        </div>
+                    </Card>
+                ))}
+            </div>
+            
+            <Card className="!bg-white">
+                 <h3 className="font-bold text-lg mb-4 text-slate-700">Clientes de {user.firstName}</h3>
+                 {userData.clients.length > 0 ? (
+                    <div className="overflow-x-auto max-h-80">
+                         <table className="w-full text-left">
+                            <thead>
+                                <tr className="bg-slate-50 uppercase text-xs font-semibold text-slate-600">
+                                    <th className="p-3">Nome</th>
+                                    <th className="p-3">Telefone</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {userData.clients.map(client => (
+                                    <tr key={client.id}>
+                                        <td className="p-3 font-medium text-slate-800">{client.fullName}</td>
+                                        <td className="p-3 text-slate-600">{client.phone}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                ) : (
+                    <p className="text-slate-500 text-center py-4">Este usuário ainda não cadastrou clientes.</p>
+                )}
+            </Card>
+        </div>
+    );
+};
+
+
+// --- USER SUMMARY VIEW (ADMIN) ---
+const UserSummaryView: FC = () => {
+    const { users } = useAuth();
+    const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
+    if (selectedUser) {
+        return (
+            <div>
+                <Button onClick={() => setSelectedUser(null)} variant="secondary" className="mb-4">
+                    <ArrowLeftIcon className="w-5 h-5 mr-2 inline-block"/>
+                    Voltar para a Lista de Usuários
+                </Button>
+                <UserDetailSummary user={selectedUser} />
+            </div>
+        )
+    }
+
+    return (
+        <Card>
+            <h2 className="text-2xl font-bold text-slate-700 mb-4">Selecione um Usuário para Ver o Resumo</h2>
+            <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                    <thead>
+                        <tr className="bg-slate-100 uppercase text-sm font-semibold">
+                            <th className="p-3">Nome Completo</th>
+                            <th className="p-3">Usuário</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {users.filter(u => u.role === 'user').map(user => (
+                            <tr key={user.id} onClick={() => setSelectedUser(user)} className="border-b hover:bg-slate-50 cursor-pointer">
+                                <td className="p-3 font-medium">{user.firstName} {user.lastName}</td>
+                                <td className="p-3">{user.username}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </Card>
+    );
+}
 
 export default App;

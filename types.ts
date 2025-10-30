@@ -43,4 +43,6 @@ export interface User {
   password: string;
   role: 'admin' | 'user';
   gender: 'male' | 'female';
+  firstName: string;
+  lastName: string;
 }

@@ -13,7 +13,8 @@ interface AuthContextType {
   users: User[]; // For admin panel
   login: (username: string, pass: string) => Promise<void>;
   logout: () => void;
-  addUser: (username: string, pass: string, gender: 'male' | 'female') => Promise<void>;
+  // FIX: Add firstName and lastName to the addUser function signature to match the User type.
+  addUser: (username: string, pass: string, gender: 'male' | 'female', firstName: string, lastName: string) => Promise<void>;
   updatePassword: (userId: string, pass: string) => Promise<void>;
   deleteUser: (userId: string) => Promise<void>;
   isLoading: boolean;
@@ -21,7 +22,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// FIX: Added 'password' property to satisfy the 'StoredUser' type which extends 'User'.
 const defaultAdminUser: StoredUser = {
     id: 'admin-user',
     username: 'admin',
@@ -29,6 +29,9 @@ const defaultAdminUser: StoredUser = {
     passwordHash: 'admin',
     role: 'admin',
     gender: 'female',
+    // FIX: Add missing firstName and lastName properties to satisfy the User type.
+    firstName: 'Admin',
+    lastName: 'User',
 };
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -56,11 +59,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setCurrentUser(null);
   };
   
-  const addUser = async (username: string, pass: string, gender: 'male' | 'female') => {
+  // FIX: Add firstName and lastName to the addUser function signature and implementation.
+  const addUser = async (username: string, pass: string, gender: 'male' | 'female', firstName: string, lastName: string) => {
     if (users.some(u => u.username === username)) {
         throw new Error("Username already exists");
     }
-    // FIX: Added 'password' property to satisfy the 'StoredUser' type which extends 'User'.
+    // FIX: Add missing firstName and lastName properties to the new user object.
     const newUser: StoredUser = {
         id: crypto.randomUUID(),
         username,
@@ -68,6 +72,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         passwordHash: pass,
         gender,
         role: 'user',
+        firstName,
+        lastName,
     };
     setUsers(prev => [...prev, newUser]);
   };

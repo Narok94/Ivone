@@ -7,7 +7,8 @@ interface AuthContextType {
   users: User[];
   login: (username: string, pass: string) => void;
   logout: () => void;
-  addUser: (username: string, pass: string, gender: 'male' | 'female') => void;
+  addUser: (username: string, pass: string, gender: 'male' | 'female', firstName: string, lastName: string) => void;
+  updateUser: (user: Omit<User, 'password' | 'role' | 'id'> & { id: string }) => void;
   updatePassword: (userId: string, pass: string) => void;
   deleteUser: (userId: string) => void;
 }
@@ -15,8 +16,8 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const initialUsers: User[] = [
-    { id: '1', username: 'admin', password: 'admin', role: 'admin', gender: 'male' },
-    { id: '2', username: 'ivone', password: 'ivone1234', role: 'user', gender: 'female' },
+    { id: '1', username: 'admin', password: 'admin', role: 'admin', gender: 'male', firstName: 'Admin', lastName: 'Master' },
+    { id: '2', username: 'ivone', password: 'ivone1234', role: 'user', gender: 'female', firstName: 'Ivone', lastName: 'Silva' },
 ];
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -36,7 +37,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setCurrentUser(null);
   }, [setCurrentUser]);
   
-  const addUser = useCallback((username: string, pass: string, gender: 'male' | 'female') => {
+  const addUser = useCallback((username: string, pass: string, gender: 'male' | 'female', firstName: string, lastName: string) => {
       if (users.some(u => u.username.toLowerCase() === username.toLowerCase())) {
           throw new Error('Este nome de usuário já existe.');
       }
@@ -46,9 +47,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           password: pass,
           role: 'user',
           gender,
+          firstName,
+          lastName,
       };
       setUsers(prev => [...prev, newUser]);
   }, [users, setUsers]);
+
+  const updateUser = useCallback((updatedUserData: Omit<User, 'password' | 'role' | 'id'> & { id: string }) => {
+      setUsers(prev => prev.map(u => u.id === updatedUserData.id ? { ...u, ...updatedUserData } : u));
+      if (currentUser?.id === updatedUserData.id) {
+          setCurrentUser(prev => prev ? { ...prev, ...updatedUserData } : null);
+      }
+  }, [setUsers, currentUser, setCurrentUser]);
   
   const updatePassword = useCallback((userId: string, pass: string) => {
       setUsers(prev => prev.map(u => u.id === userId ? { ...u, password: pass } : u));
@@ -69,6 +79,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     login,
     logout,
     addUser,
+    updateUser,
     updatePassword,
     deleteUser,
   };
