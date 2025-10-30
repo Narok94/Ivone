@@ -315,7 +315,7 @@ const IvoneLayout: React.FC = () => {
                 {userInitials}
             </button>
             {isDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-lg border border-pink-100 z-30 overflow-hidden animate-slide-in origin-top-right">
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-lg border border-pink-100 z-30 overflow-hidden animate-dropdown-enter origin-top-right">
                     <div className="p-2">
                         <p className="font-bold text-gray-800 px-2">{currentUser?.firstName} {currentUser?.lastName}</p>
                         <p className="text-xs text-gray-500 px-2 mb-1">@{currentUser?.username}</p>
@@ -354,7 +354,9 @@ const IvoneLayout: React.FC = () => {
       )}
 
       <main className="p-4 md:p-10">
-        {renderView()}
+        <div key={activeView} className="animate-view-enter">
+            {renderView()}
+        </div>
       </main>
 
       {isMobile && <AIAssistant showToast={showToast} />}
