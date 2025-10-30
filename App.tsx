@@ -1938,35 +1938,35 @@ const ClientForm: FC<{ client?: Client | null; onDone: () => void }> = ({ client
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
-            <Input label="Nome Completo" id="fullName" name="fullName" value={formData.fullName} onChange={handleChange} required />
+            <Input label="Nome Completo" id="fullName" name="fullName" value={formData.fullName} onChange={handleChange} />
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                 <div className="md:col-span-1">
-                    <Input label="CEP" id="cep" name="cep" value={formData.cep} onChange={handleChange} onBlur={handleCepBlur} maxLength={9} placeholder="00000-000" required />
+                    <Input label="CEP" id="cep" name="cep" value={formData.cep} onChange={handleChange} onBlur={handleCepBlur} maxLength={9} placeholder="00000-000" />
                     {isCepLoading && <p className="text-sm text-gray-500 mt-1">Buscando endereço...</p>}
                     {cepError && <p className="text-sm text-red-500 mt-1">{cepError}</p>}
                 </div>
                 <div className="md:col-span-2">
-                    <Input label="Rua / Logradouro" id="street" name="street" value={formData.street} onChange={handleChange} required />
+                    <Input label="Rua / Logradouro" id="street" name="street" value={formData.street} onChange={handleChange} />
                 </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Input label="Número" id="number" name="number" value={formData.number} onChange={handleChange} required />
+                <Input label="Número" id="number" name="number" value={formData.number} onChange={handleChange} />
                 <div className="md:col-span-2">
-                    <Input label="Complemento (opcional)" id="complement" name="complement" value={formData.complement} onChange={handleChange} />
+                    <Input label="Complemento" id="complement" name="complement" value={formData.complement} onChange={handleChange} />
                 </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Input label="Bairro" id="neighborhood" name="neighborhood" value={formData.neighborhood} onChange={handleChange} required />
-                <Input label="Cidade" id="city" name="city" value={formData.city} onChange={handleChange} required />
-                <Input label="Estado (UF)" id="state" name="state" value={formData.state} onChange={handleChange} required maxLength={2} />
+                <Input label="Bairro" id="neighborhood" name="neighborhood" value={formData.neighborhood} onChange={handleChange} />
+                <Input label="Cidade" id="city" name="city" value={formData.city} onChange={handleChange} />
+                <Input label="Estado (UF)" id="state" name="state" value={formData.state} onChange={handleChange} maxLength={2} />
             </div>
             
-            <Input label="Telefone" id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange} maxLength={15} required />
+            <Input label="Telefone" id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange} maxLength={15} />
             <div>
-                <Input label="E-mail (opcional)" id="email" name="email" type="email" value={formData.email} onChange={handleChange} />
+                <Input label="E-mail" id="email" name="email" type="email" value={formData.email} onChange={handleChange} />
                 <div className="flex gap-2 mt-1.5 flex-wrap">
                     {['@gmail.com', '@hotmail.com', '@yahoo.com', '@yahoo.com.br'].map(domain => (
                         <button
@@ -1980,8 +1980,8 @@ const ClientForm: FC<{ client?: Client | null; onDone: () => void }> = ({ client
                     ))}
                 </div>
             </div>
-            <Input label="CPF (opcional)" id="cpf" name="cpf" value={formData.cpf} onChange={handleChange} />
-            <TextArea label="Observação (opcional)" id="observation" name="observation" value={formData.observation} onChange={handleChange} />
+            <Input label="CPF" id="cpf" name="cpf" value={formData.cpf} onChange={handleChange} />
+            <TextArea label="Observação" id="observation" name="observation" value={formData.observation} onChange={handleChange} />
             <div className="flex justify-end pt-4">
                 <Button type="submit">{client ? 'Atualizar Cliente' : 'Cadastrar Cliente'}</Button>
             </div>
