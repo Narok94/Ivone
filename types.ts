@@ -42,7 +42,7 @@ export interface User {
   username: string;
   password: string;
   role: 'admin' | 'user';
-  gender: 'male' | 'female';
   firstName: string;
   lastName: string;
+  theme?: 'default' | 'neon-chic';
 }

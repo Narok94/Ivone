@@ -13,8 +13,8 @@ interface AuthContextType {
   users: User[]; // For admin panel
   login: (username: string, pass: string) => Promise<void>;
   logout: () => void;
-  // FIX: Add firstName and lastName to the addUser function signature to match the User type.
-  addUser: (username: string, pass: string, gender: 'male' | 'female', firstName: string, lastName: string) => Promise<void>;
+  // FIX: Removed `gender` from the `addUser` function signature as it is not part of the `User` type.
+  addUser: (username: string, pass: string, firstName: string, lastName: string) => Promise<void>;
   updatePassword: (userId: string, pass: string) => Promise<void>;
   deleteUser: (userId: string) => Promise<void>;
   isLoading: boolean;
@@ -28,8 +28,7 @@ const defaultAdminUser: StoredUser = {
     password: 'admin',
     passwordHash: 'admin',
     role: 'admin',
-    gender: 'female',
-    // FIX: Add missing firstName and lastName properties to satisfy the User type.
+    // FIX: Removed `gender` property on line 31 as it does not exist in the `User` type.
     firstName: 'Admin',
     lastName: 'User',
 };
@@ -59,18 +58,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setCurrentUser(null);
   };
   
-  // FIX: Add firstName and lastName to the addUser function signature and implementation.
-  const addUser = async (username: string, pass: string, gender: 'male' | 'female', firstName: string, lastName: string) => {
+  // FIX: Removed the `gender` parameter from the `addUser` function and the `gender` property from the new user object to match the User type.
+  const addUser = async (username: string, pass: string, firstName: string, lastName: string) => {
     if (users.some(u => u.username === username)) {
         throw new Error("Username already exists");
     }
-    // FIX: Add missing firstName and lastName properties to the new user object.
     const newUser: StoredUser = {
         id: crypto.randomUUID(),
         username,
         password: pass,
         passwordHash: pass,
-        gender,
         role: 'user',
         firstName,
         lastName,

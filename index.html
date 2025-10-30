@@ -78,128 +78,142 @@
         .animation-delay-4000 {
             animation-delay: -5s;
         }
-
-        /* --- THEME OVERRIDES --- */
-
-        /* Male Theme: Base */
-        .theme-male body {
-            background-color: #1f2937; /* gray-800 */
-            color: #d1d5db; /* gray-300 */
-        }
-        .theme-male ::-webkit-scrollbar-track {
-            background: #374151; /* gray-700 */
-        }
-        .theme-male ::-webkit-scrollbar-thumb {
-            background: #6b7280; /* gray-500 */
-        }
-        .theme-male ::-webkit-scrollbar-thumb:hover {
-            background: #9ca3af; /* gray-400 */
-        }
-        .theme-male .bg-gradient-to-br.from-purple-50.via-pink-50.to-rose-100 {
-            background-image: linear-gradient(to bottom right, #111827, #1f2937, #374151); /* gray-900, gray-800, gray-700 */
+        
+        /* --- NEON CHIC THEME --- */
+        .theme-neon-chic {
+            --nc-bg-primary: #100f1c;
+            --nc-bg-secondary: #1e1d32;
+            --nc-bg-tertiary: rgba(255, 255, 255, 0.05);
+            --nc-text-primary: #e8e8e8;
+            --nc-text-secondary: #a8a8c0;
+            --nc-accent-pink: #ff00ff;
+            --nc-accent-cyan: #00ffff;
+            --nc-border: rgba(255, 0, 255, 0.25); /* Slightly reduced border opacity */
+            --nc-danger: #ff4d4d;
         }
 
-        /* Male Theme: Common Components */
-        .theme-male .bg-white\/60 { /* Card */
-            background-color: rgba(31, 41, 55, 0.6); /* gray-800/60 */
+        .theme-neon-chic body, .theme-neon-chic {
+            background-color: var(--nc-bg-primary);
+            color: var(--nc-text-primary);
         }
-        .theme-male .border-pink-100 { /* Card border */
-            border-color: #4b5563; /* gray-600 */
+        .theme-neon-chic .bg-pink-50 { background-color: var(--nc-bg-primary); }
+
+        /* Scrollbar */
+        .theme-neon-chic ::-webkit-scrollbar-track { background: var(--nc-bg-secondary); }
+        .theme-neon-chic ::-webkit-scrollbar-thumb { background: var(--nc-accent-pink); }
+        .theme-neon-chic ::-webkit-scrollbar-thumb:hover { background: #ff4dff; }
+
+        /* General Text */
+        .theme-neon-chic .text-gray-800 { color: var(--nc-text-primary); }
+        .theme-neon-chic .text-gray-700 { color: var(--nc-text-primary); }
+        .theme-neon-chic .text-gray-600 { color: var(--nc-text-secondary); }
+        .theme-neon-chic .text-gray-500 { color: var(--nc-text-secondary); }
+        .theme-neon-chic .text-gray-900 { color: #ffffff; }
+
+        /* Gradients */
+        .theme-neon-chic .bg-gradient-to-br.from-purple-50.via-pink-50.to-rose-100 {
+            background-image: linear-gradient(to bottom right, #100f1c, #1a1a2e);
         }
-        .theme-male .from-pink-500 { /* Primary button gradient start */
-            --tw-gradient-from: #2563eb; /* blue-600 */
-            --tw-gradient-to: rgba(37, 99, 235, 0);
+        .theme-neon-chic .from-pink-500.to-rose-500, .theme-neon-chic .from-pink-500 {
+             --tw-gradient-from: var(--nc-accent-pink);
+             --tw-gradient-to: rgba(255, 0, 255, 0);
         }
-        .theme-male .to-rose-500 { /* Primary button gradient end */
-            --tw-gradient-to: #1d4ed8; /* blue-800 */
-        }
-        .theme-male .focus\:ring-rose-400:focus { /* Primary button focus */
-            --tw-ring-color: #60a5fa; /* blue-400 */
-        }
-        .theme-male .bg-pink-100 { /* Secondary button */
-            background-color: #4b5563; /* gray-600 */
-        }
-        .theme-male .text-pink-700 { /* Secondary button text */
-            color: #e5e7eb; /* gray-200 */
-        }
-        .theme-male .hover\:bg-pink-200:hover { /* Secondary button hover */
-            background-color: #6b7280; /* gray-500 */
-        }
-        .theme-male .focus\:ring-pink-500:focus { /* Secondary button focus */
-            --tw-ring-color: #9ca3af; /* gray-400 */
+        .theme-neon-chic .to-rose-500 { --tw-gradient-to: #c000c0; }
+        .theme-neon-chic .bg-gradient-to-r.from-pink-500.to-rose-500 .bg-clip-text {
+            text-shadow: 0 0 2px rgba(255, 0, 255, 0.5); /* Softened glow */
         }
 
-        /* Inputs, TextAreas, Selects */
-        .theme-male .text-gray-700 { color: #d1d5db; }
-        .theme-male .text-gray-500 { color: #9ca3af; }
-        .theme-male .text-gray-900 { color: #f9fafb; }
-        .theme-male .bg-white\/70 { background-color: rgba(55, 65, 81, 0.7); }
-        .theme-male .border-gray-300 { border-color: #4b5563; }
-        .theme-male .focus\:ring-pink-400:focus { --tw-ring-color: #60a5fa; }
-        .theme-male .focus\:border-pink-400:focus { border-color: #60a5fa; }
-        .theme-male select { color-scheme: dark; }
-
-        /* Modal */
-        .theme-male .border-pink-200 { border-color: #4b5563; }
-        .theme-male .text-pink-600 { color: #93c5fd; }
-        .theme-male .text-gray-400 { color: #9ca3af; }
-
-        /* Layout Specific */
-        .theme-male header .bg-white\/70 { background-color: rgba(31, 41, 55, 0.7); }
-        .theme-male header .from-pink-500, .theme-male header .to-rose-500 {
-            --tw-gradient-from: #93c5fd; /* blue-300 */
-            --tw-gradient-to: #dbeafe; /* blue-100 */
+        /* Cards & Modals */
+        .theme-neon-chic .bg-white\/60, .theme-neon-chic .bg-white {
+            background-color: rgba(28, 27, 46, 0.6);
+            backdrop-filter: blur(5px); /* Reduced blur */
         }
-        .theme-male header .text-pink-600 { color: #93c5fd; }
-        .theme-male header .hover\:bg-pink-100:hover { background-color: #374151; }
+        .theme-neon-chic .border-pink-100 { border-color: var(--nc-border); }
+        .theme-neon-chic .border-pink-200 { border-color: var(--nc-border); }
+        .theme-neon-chic .text-rose-800, .theme-neon-chic .text-pink-600 {
+            color: var(--nc-accent-pink);
+            text-shadow: 0 0 2px rgba(255, 0, 255, 0.6); /* Softened text glow */
+        }
+        .theme-neon-chic .shadow-md { box-shadow: 0 0 15px rgba(255, 0, 255, 0.1), 0 2px 4px rgba(0,0,0,0.2); } /* Changed to subtle pink glow */
 
+        /* Buttons */
+        .theme-neon-chic .bg-gradient-to-br.from-pink-500.to-rose-500 {
+            background-image: linear-gradient(to bottom right, var(--nc-accent-pink), #c000c0);
+            box-shadow: 0 0 5px rgba(255, 0, 255, 0.6), inset 0 0 4px rgba(255,255,255,0.2); /* Softened button glow */
+        }
+        .theme-neon-chic .hover\:-translate-y-0\.5:hover {
+            box-shadow: 0 0 10px rgba(255, 0, 255, 0.7), inset 0 0 4px rgba(255,255,255,0.2); /* Softened hover glow */
+        }
+        .theme-neon-chic .bg-pink-100 { background-color: var(--nc-bg-tertiary); }
+        .theme-neon-chic .text-pink-700 { color: var(--nc-accent-cyan); }
+        .theme-neon-chic .hover\:bg-pink-200:hover { background-color: rgba(0, 255, 255, 0.1); }
+        .theme-neon-chic .focus\:ring-rose-400:focus, .theme-neon-chic .focus\:ring-pink-500:focus {
+            --tw-ring-color: var(--nc-accent-pink);
+            --tw-ring-offset-color: var(--nc-bg-primary);
+        }
+        .theme-neon-chic .bg-red-500 { background-color: var(--nc-danger); }
+        
+        /* Inputs */
+        .theme-neon-chic .bg-white\/70 { background-color: var(--nc-bg-primary); }
+        .theme-neon-chic .border-gray-300 { border-color: var(--nc-border); }
+        .theme-neon-chic .focus\:ring-pink-400:focus { --tw-ring-color: var(--nc-accent-pink); }
+        .theme-neon-chic .focus\:border-pink-400:focus { border-color: var(--nc-accent-pink); }
+        .theme-neon-chic select { color-scheme: dark; }
+
+        /* Header */
+        .theme-neon-chic header .bg-white\/70 {
+            background-color: rgba(16, 15, 28, 0.7);
+        }
+        .theme-neon-chic header .bg-gradient-to-r.from-pink-500.to-rose-500 {
+            text-shadow: 0 0 3px rgba(255, 0, 255, 0.6); /* Softened header glow */
+        }
+        .theme-neon-chic header .hover\:bg-pink-100:hover { background-color: var(--nc-bg-secondary); }
+        .theme-neon-chic header .text-pink-600 { color: var(--nc-accent-pink); }
+        
         /* Header Summary */
-        .theme-male .bg-white\/60.backdrop-blur-md.p-2.shadow-lg { background-color: rgba(17, 24, 39, 0.6); }
-        .theme-male .from-purple-400.to-pink-400 { --tw-gradient-from: #4f46e5; --tw-gradient-to: #3b82f6; }
-        .theme-male .from-pink-400.to-rose-400 { --tw-gradient-from: #0e7490; --tw-gradient-to: #059669; }
-        .theme-male .from-emerald-400.to-green-400 { --tw-gradient-from: #059669; --tw-gradient-to: #16a34a; }
-        .theme-male .from-amber-400.to-orange-400 { --tw-gradient-from: #d97706; --tw-gradient-to: #ea580c; }
+        .theme-neon-chic .bg-white\/60.backdrop-blur-md.p-2.shadow-lg { background-color: rgba(16, 15, 28, 0.5); }
+        .theme-neon-chic .from-purple-400.to-pink-400 { background-image: linear-gradient(to right, #6a00ff, #c000c0); }
+        .theme-neon-chic .from-pink-400.to-rose-400 { background-image: linear-gradient(to right, #ff00ff, #c000c0); }
+        .theme-neon-chic .from-emerald-400.to-green-400 { background-image: linear-gradient(to right, #00ffff, #00c0c0); }
+        .theme-neon-chic .from-amber-400.to-orange-400 { background-image: linear-gradient(to right, #ff8000, #ff4500); }
+        .theme-neon-chic .[text-shadow\:1px_1px_2px_rgba(0\,0\,0\,0\.3)] { text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
 
         /* Dashboard & Others */
-        .theme-male .text-rose-800 { color: #f9fafb; }
-        .theme-male .from-pink-50.to-rose-100 { background-image: linear-gradient(to bottom right, #374151, #4b5563); }
-        .theme-male .border-rose-200 { border-color: #6b7280; }
-        .theme-male .text-rose-500 { color: #60a5fa; }
-        .theme-male .text-gray-800 { color: #e5e7eb; }
-        .theme-male .text-gray-600 { color: #9ca3af; }
-        .theme-male .from-emerald-50.to-green-100 { background-image: linear-gradient(to bottom right, #1f2937, #374151); }
-        .theme-male .border-green-200 { border-color: #22c55e; }
-        .theme-male .text-emerald-500 { color: #34d399; }
-        .theme-male .from-pink-100.to-rose-100 { background-image: linear-gradient(to bottom right, #374151, #4b5563); }
-        .theme-male .text-pink-500 { color: #93c5fd; }
-
+        .theme-neon-chic .from-pink-50.to-rose-100 { background-image: linear-gradient(to bottom right, var(--nc-bg-tertiary), rgba(255,0,255,0.1)); }
+        .theme-neon-chic .border-rose-200 { border-color: var(--nc-border); }
+        .theme-neon-chic .text-rose-500 { color: var(--nc-accent-pink); }
+        .theme-neon-chic .from-emerald-50.to-green-100 { background-image: linear-gradient(to bottom right, var(--nc-bg-tertiary), rgba(0,255,255,0.1)); }
+        .theme-neon-chic .border-green-200 { border-color: rgba(0,255,255,0.3); }
+        .theme-neon-chic .text-emerald-500 { color: var(--nc-accent-cyan); }
+        .theme-neon-chic .from-pink-100.to-rose-100 { background-image: linear-gradient(to bottom right, var(--nc-bg-secondary), var(--nc-bg-tertiary)); }
+        .theme-neon-chic .text-pink-500 { color: var(--nc-accent-pink); }
+        
         /* Tables & Lists */
-        .theme-male .bg-rose-50 { background-color: #374151; }
-        .theme-male .border-rose-100 { border-color: #4b5563; }
-        .theme-male .text-rose-600 { color: #f87171; }
-        .theme-male .bg-emerald-50 { background-color: #1f2937; }
-        .theme-male .border-emerald-100 { border-color: #10b981; }
-        .theme-male .text-emerald-600 { color: #6ee7b7; }
-        .theme-male .bg-pink-100\/70 { background-color: rgba(55, 65, 81, 0.7); }
-        .theme-male .text-pink-800 { color: #e5e7eb; }
-        .theme-male .hover\:bg-pink-50\/50:hover { background-color: rgba(75, 85, 99, 0.5); }
-        .theme-male .border-pink-100\/50 { border-color: rgba(75, 85, 99, 0.5); }
-        .theme-male .bg-rose-100 { background-color: #4b5563; }
-        .theme-male .text-rose-700 { color: #fca5a5; }
-        .theme-male .bg-emerald-100 { background-color: #059669; }
-        .theme-male .text-emerald-700 { color: #d1fae5; }
-        .theme-male .bg-gray-100 { background-color: #374151; }
+        .theme-neon-chic .bg-pink-100\/70 { background-color: rgba(255, 0, 255, 0.1); }
+        .theme-neon-chic .text-pink-800 { color: var(--nc-accent-pink); }
+        .theme-neon-chic .border-pink-100\/50 { border-color: rgba(255, 0, 255, 0.2); }
+        .theme-neon-chic .hover\:bg-pink-50\/50:hover { background-color: rgba(255, 0, 255, 0.08); }
 
-        /* AI Assistant */
-        .theme-male .bg-white\/50 { background-color: rgba(31, 41, 55, 0.5); }
-        .theme-male .border-pink-200\/50 { border-color: rgba(75, 85, 99, 0.5); }
-        .theme-male .from-pink-400 { --tw-gradient-from: #3b82f6; }
-        .theme-male .to-rose-500 { --tw-gradient-to: #6d28d9; }
-        .theme-male .bg-pink-500 { background-color: #2563eb; }
-        .theme-male .bg-white\/80 { background-color: rgba(55, 65, 81, 0.8); }
-        .theme-male .hover\:bg-rose-500:hover { background-color: #3b82f6; }
-        .theme-male .disabled\:bg-pink-300:disabled { background-color: #4b5563; }
-        .theme-male .animate-gentle-pulse { animation: none; }
+        .theme-neon-chic .bg-rose-100 { background-color: rgba(255, 0, 0, 0.15); }
+        .theme-neon-chic .text-rose-700 { color: var(--nc-danger); }
+        .theme-neon-chic .bg-emerald-100 { background-color: rgba(0, 255, 255, 0.15); }
+        .theme-neon-chic .text-emerald-700 { color: var(--nc-accent-cyan); }
+
+        .theme-neon-chic .bg-rose-50 { background-color: rgba(255, 0, 0, 0.05); }
+        .theme-neon-chic .border-rose-100 { border-color: rgba(255, 0, 0, 0.2); }
+        .theme-neon-chic .text-rose-600 { color: var(--nc-danger); }
+
+        .theme-neon-chic .bg-emerald-50 { background-color: rgba(0, 255, 255, 0.05); }
+        .theme-neon-chic .border-emerald-100 { border-color: rgba(0, 255, 255, 0.2); }
+        .theme-neon-chic .text-emerald-600 { color: var(--nc-accent-cyan); }
+
+        .theme-neon-chic .bg-yellow-50 { background-color: rgba(255, 255, 0, 0.05); }
+        .theme-neon-chic .border-yellow-200 { border-color: rgba(255, 255, 0, 0.2); }
+        .theme-neon-chic .text-yellow-600 { color: #ffff00; }
+        
+        /* Empty State */
+        .theme-neon-chic .bg-pink-50\/50 { background-color: transparent; }
+        .theme-neon-chic .border-pink-200 { border-color: var(--nc-border); }
 
         /* --- ADMIN DARK THEME --- */
         .theme-admin-dark {

@@ -36,6 +36,9 @@ const FileTextIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="htt
 const CalendarIcon: FC<{className?: string}> = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>);
 const ChevronLeftIcon: FC<{className?: string}> = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m15 18-6-6 6-6"/></svg>;
 const ChevronRightIcon: FC<{className?: string}> = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m9 18 6-6-6-6"/></svg>;
+const UserCogIcon: FC<{className?: string}> = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="M12 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M12 13.5c-2.28 0-4.33.9-5.8 2.34"/><circle cx="18" cy="18" r="2"/><path d="m18 14-.5.5"/><path d="m21.5 17.5-.5.5"/><path d="m18 22-.5-.5"/><path d="m14.5 17.5.5-.5"/><path d="m20.5 15-.5.5"/><path d="m20.5 20.5-.5-.5"/><path d="m15.5 15-.5.5"/><path d="m15.5 20.5.5-.5"/></svg>;
+const PaletteIcon: FC<{className?: string}> = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>;
+const LockIcon: FC<{className?: string}> = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>;
 
 const CleanMagicIcon: FC<{className?: string}> = ({className}) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className={className}>
@@ -98,11 +101,10 @@ const App: React.FC = () => {
     const { currentUser } = useAuth();
 
     useEffect(() => {
-        // Apply theme based on logged-in user's gender
-        if (currentUser?.gender === 'male') {
-            document.documentElement.classList.add('theme-male');
-        } else {
-            document.documentElement.classList.remove('theme-male');
+        // Apply theme based on logged-in user's preference
+        document.documentElement.className = ''; // Reset classes
+        if (currentUser?.theme === 'neon-chic') {
+            document.documentElement.classList.add('theme-neon-chic');
         }
     }, [currentUser]);
 
@@ -215,14 +217,27 @@ const IvoneLayout: React.FC = () => {
   const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [prefilledClientId, setPrefilledClientId] = useState<string | null>(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isSettingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [isProfileModalOpen, setProfileModalOpen] = useState(false);
+  
   const { logout, currentUser } = useAuth();
   const isMobile = useIsMobile();
-
-  const isMaleTheme = currentUser?.gender === 'male';
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const showToast = (message: string) => {
       setToastMessage(message);
   };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
   
   const handleEditSale = (sale: Sale) => {
     setEditingSale(sale);
@@ -281,18 +296,44 @@ const IvoneLayout: React.FC = () => {
       default: return <Dashboard onNavigate={handleNavigate} />;
     }
   };
+  
+  const userInitials = (currentUser?.firstName?.[0] || '') + (currentUser?.lastName?.[0] || '');
 
   return (
     <div className="min-h-screen bg-pink-50 text-gray-800">
       {toastMessage && <Toast message={toastMessage} onClose={() => setToastMessage(null)} />}
-      
-      <header className="bg-white/70 backdrop-blur-lg p-4 shadow-md flex items-center justify-center relative sticky top-0 z-10">
+      <SettingsModal isOpen={isSettingsModalOpen} onClose={() => setSettingsModalOpen(false)} showToast={showToast} />
+      <EditProfileModal isOpen={isProfileModalOpen} onClose={() => setProfileModalOpen(false)} showToast={showToast} />
+
+      <header className="bg-white/70 backdrop-blur-lg p-4 shadow-md flex items-center justify-center relative sticky top-0 z-20">
          <h1 className="text-lg sm:text-xl md:text-2xl font-extrabold tracking-tight bg-gradient-to-r from-pink-500 to-rose-500 text-transparent bg-clip-text whitespace-nowrap">
-            {isMaleTheme ? `Bem vindo ${currentUser?.firstName} 💪🔧` : `Bem vinda ${currentUser?.firstName} 💖✨`}
+            Olá, {currentUser?.firstName}! 💖✨
          </h1>
-         <button onClick={logout} title="Sair" className="absolute right-4 p-2 rounded-full hover:bg-pink-100 text-pink-600 transition-colors">
-            <LogOutIcon className="w-6 h-6"/>
-         </button>
+         
+         <div className="absolute right-4" ref={dropdownRef}>
+            <button onClick={() => setIsDropdownOpen(prev => !prev)} className="w-10 h-10 rounded-full bg-pink-100 text-pink-700 font-bold flex items-center justify-center text-lg hover:bg-pink-200 transition-colors">
+                {userInitials}
+            </button>
+            {isDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-lg border border-pink-100 z-30 overflow-hidden animate-slide-in origin-top-right">
+                    <div className="p-2">
+                        <p className="font-bold text-gray-800 px-2">{currentUser?.firstName} {currentUser?.lastName}</p>
+                        <p className="text-xs text-gray-500 px-2 mb-1">@{currentUser?.username}</p>
+                    </div>
+                    <div className="border-t border-pink-100"></div>
+                     <button onClick={() => { setProfileModalOpen(true); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-gray-700 hover:bg-pink-50 flex items-center gap-3 transition-colors">
+                        <UserCogIcon className="w-5 h-5 text-pink-500"/> Editar Perfil
+                    </button>
+                     <button onClick={() => { setSettingsModalOpen(true); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-gray-700 hover:bg-pink-50 flex items-center gap-3 transition-colors">
+                        <PaletteIcon className="w-5 h-5 text-pink-500"/> Configurações
+                    </button>
+                    <div className="border-t border-pink-100"></div>
+                     <button onClick={logout} className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors">
+                        <LogOutIcon className="w-5 h-5"/> Sair
+                    </button>
+                </div>
+            )}
+         </div>
       </header>
       
       <HeaderSummary setActiveView={setActiveView} />
@@ -473,15 +514,15 @@ const ManageUsers: FC<{showToast: (msg: string) => void;}> = ({ showToast }) => 
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [isPasswordModalOpen, setPasswordModalOpen] = useState<User | null>(null);
 
-    const [newUser, setNewUser] = useState({ username: '', password: '', gender: 'female' as 'male' | 'female', firstName: '', lastName: '' });
+    const [newUser, setNewUser] = useState({ username: '', password: '', firstName: '', lastName: '' });
     const [newPassword, setNewPassword] = useState('');
 
     const handleAddUser = (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            addUser(newUser.username, newUser.password, newUser.gender, newUser.firstName, newUser.lastName);
+            addUser(newUser.username, newUser.password, newUser.firstName, newUser.lastName);
             showToast(`Usuário ${newUser.username} criado!`);
-            setNewUser({ username: '', password: '', gender: 'female', firstName: '', lastName: '' });
+            setNewUser({ username: '', password: '', firstName: '', lastName: '' });
             setAddUserModalOpen(false);
         } catch (error: any) {
             alert(error.message);
@@ -539,7 +580,6 @@ const ManageUsers: FC<{showToast: (msg: string) => void;}> = ({ showToast }) => 
                         <tr className="bg-slate-100 uppercase text-sm font-semibold">
                             <th className="p-3">Nome Completo</th>
                             <th className="p-3">Usuário</th>
-                            <th className="p-3">Gênero</th>
                             <th className="p-3 text-right">Ações</th>
                         </tr>
                     </thead>
@@ -548,7 +588,6 @@ const ManageUsers: FC<{showToast: (msg: string) => void;}> = ({ showToast }) => 
                             <tr key={user.id} className="border-b">
                                 <td className="p-3 font-medium">{user.firstName} {user.lastName}</td>
                                 <td className="p-3">{user.username}</td>
-                                <td className="p-3 capitalize">{user.gender === 'male' ? 'Masculino' : 'Feminino'}</td>
                                 <td className="p-3 text-right">
                                     <div className="flex gap-2 justify-end">
                                         <button onClick={() => setEditingUser(user)} className="text-blue-600 hover:text-blue-800" title="Editar Usuário"><EditIcon /></button>
@@ -569,10 +608,6 @@ const ManageUsers: FC<{showToast: (msg: string) => void;}> = ({ showToast }) => 
                     <Input label="Sobrenome" id="newLastName" value={newUser.lastName} onChange={e => setNewUser(p => ({...p, lastName: capitalize(e.target.value)}))} />
                     <Input label="Nome de usuário" id="newUsername" value={newUser.username} onChange={e => setNewUser(p => ({...p, username: e.target.value}))} />
                     <Input label="Senha" id="newPassword" type="password" value={newUser.password} onChange={e => setNewUser(p => ({...p, password: e.target.value}))} />
-                    <Select label="Gênero" id="newGender" value={newUser.gender} onChange={e => setNewUser(p => ({...p, gender: e.target.value as 'male' | 'female'}))}>
-                        <option value="female">Feminino</option>
-                        <option value="male">Masculino</option>
-                    </Select>
                     <Button type="submit">Criar</Button>
                 </form>
             </Modal>
@@ -584,10 +619,6 @@ const ManageUsers: FC<{showToast: (msg: string) => void;}> = ({ showToast }) => 
                         <Input label="Nome" id="editFirstName" value={editingUser.firstName} onChange={e => setEditingUser(p => p ? {...p, firstName: capitalize(e.target.value)} : null)} />
                         <Input label="Sobrenome" id="editLastName" value={editingUser.lastName} onChange={e => setEditingUser(p => p ? {...p, lastName: capitalize(e.target.value)} : null)} />
                         <Input label="Nome de usuário" id="editUsername" value={editingUser.username} onChange={e => setEditingUser(p => p ? {...p, username: e.target.value} : null)} />
-                        <Select label="Gênero" id="editGender" value={editingUser.gender} onChange={e => setEditingUser(p => p ? {...p, gender: e.target.value as 'male' | 'female'} : null)}>
-                            <option value="female">Feminino</option>
-                            <option value="male">Masculino</option>
-                        </Select>
                         <Button type="submit">Atualizar Usuário</Button>
                     </form>
                 )}
@@ -655,8 +686,6 @@ const AIAssistant: FC<{ showToast: (message: string) => void }> = ({ showToast }
     const audioCtxRef = useRef<AudioContext | null>(null);
     const lastPlayedMessageRef = useRef<ReactNode | null>(null);
     const [initialGreetingAudio, setInitialGreetingAudio] = useState<AudioBuffer | null>(null);
-
-    const isMaleTheme = currentUser?.gender === 'male';
 
     useEffect(() => {
         if (!audioCtxRef.current) {
@@ -756,8 +785,8 @@ const AIAssistant: FC<{ showToast: (message: string) => void }> = ({ showToast }
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const clientNames = clients.map(c => c.fullName).join(', ') || 'Nenhum';
         
-        const assistantName = isMaleTheme ? 'Rob' : 'Rebeca';
-        const emojis = isMaleTheme ? '🤖🔧🚀' : '💖✨🎉';
+        const assistantName = 'Rebeca';
+        const emojis = '💖✨🎉';
         const userGreetingName = currentUser?.firstName || 'pessoa incrível';
         const systemInstruction = `Você é '${assistantName}', um assistente virtual SUPER extrovertido, divertido e simpático para o app 'Sistema de Vendas'. Seu objetivo é ajudar o usuário, ${userGreetingName}, a cadastrar clientes, vendas e pagamentos de uma forma leve e descontraída. Clientes existentes: ${clientNames}. Ações disponíveis: 1. 'add_client': Campos obrigatórios: fullName, address, phone, cpf. Campos opcionais: email, observation. 2. 'add_sale': Campos obrigatórios: clientName (deve ser um dos clientes existentes da lista), productName, quantity, unitPrice. Campos opcionais: observation. 3. 'add_payment': Campos obrigatórios: clientName (deve ser um dos clientes existentes da lista), amount. Campos opcionais: observation. COMO PROCEDER: Use uma linguagem bem humorada, muitos emojis ${emojis} e seja super proativo! Peça UMA informação de cada vez, como se estivesse batendo um papo. Quando tiver TODOS os campos obrigatórios para uma ação, responda APENAS com um JSON no seguinte formato: {"action": "action_name", "data": { ...dados... }}. NÃO adicione nenhum texto antes ou depois do JSON, seja direto ao ponto nessa hora! Se o usuário pedir para cancelar, diga algo como "Sem problemas! Missão abortada. 🚀 O que vamos fazer agora?". Se o usuário conversar sobre qualquer outra coisa, entre na brincadeira e responda de forma divertida antes de voltar ao foco. Ao cumprimentar, sempre use o nome do usuário (${userGreetingName}) e se apresente com entusiasmo!`;
 
@@ -766,13 +795,11 @@ const AIAssistant: FC<{ showToast: (message: string) => void }> = ({ showToast }
             config: { systemInstruction },
         });
 
-        const initialMessage = isMaleTheme
-            ? `E aí, ${currentUser?.firstName}! 🤘 Sou o Rob, seu parceiro robótico pra deixar tudo em ordem por aqui. O que a gente vai aprontar hoje? Cadastrar um cliente novo, registrar uma venda bombástica ou receber uma grana? Manda a braba! 🚀`
-            : `Oii, ${currentUser?.firstName}! 💖 Aqui é a Rebeca, sua assistente pessoal, pronta para deixar tudo organizado! Vamos começar? Me conta, vamos cadastrar uma cliente super especial, lançar uma venda incrível ou registrar um pagamento? Tô prontíssima! ✨`;
+        const initialMessage = `Oii, ${currentUser?.firstName}! 💖 Aqui é a Rebeca, sua assistente pessoal, pronta para deixar tudo organizado! Vamos começar? Me conta, vamos cadastrar uma cliente super especial, lançar uma venda incrível ou registrar um pagamento? Tô prontíssima! ✨`;
 
         setMessages([{ sender: 'ai', text: initialMessage }]);
         preloadGreetingAudio(initialMessage);
-    }, [clients, isMaleTheme, currentUser]);
+    }, [clients, currentUser]);
 
      useEffect(() => {
         // FIX: Cast window to `any` to access non-standard SpeechRecognition APIs
@@ -1032,7 +1059,7 @@ const AIAssistant: FC<{ showToast: (message: string) => void }> = ({ showToast }
                                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center">
                                      <BotMessageSquareIcon className="w-5 h-5 text-white"/>
                                  </div>
-                                 <h2 className="text-xl font-bold text-rose-800">{isMaleTheme ? 'Assistente Rob' : 'Assistente Rebeca'}</h2>
+                                 <h2 className="text-xl font-bold text-rose-800">Assistente Rebeca</h2>
                              </div>
                              <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-800 text-2xl font-bold">&times;</button>
                          </div>
@@ -1085,6 +1112,180 @@ const AIAssistant: FC<{ showToast: (message: string) => void }> = ({ showToast }
         </>
     );
 };
+
+// --- EDIT PROFILE MODAL ---
+const EditProfileModal: FC<{ isOpen: boolean; onClose: () => void; showToast: (msg: string) => void }> = ({ isOpen, onClose, showToast }) => {
+    const { currentUser, updateUser, updatePassword } = useAuth();
+    const [formData, setFormData] = useState({ firstName: '', lastName: '' });
+    const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    const [error, setError] = useState('');
+    
+    useEffect(() => {
+        if (currentUser) {
+            setFormData({
+                firstName: currentUser.firstName,
+                lastName: currentUser.lastName,
+            });
+        }
+    }, [currentUser, isOpen]);
+
+    const handleInfoSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!currentUser) return;
+        try {
+            updateUser({ id: currentUser.id, ...formData });
+            showToast("Perfil atualizado com sucesso!");
+            onClose();
+        } catch (err: any) {
+            setError(err.message);
+        }
+    };
+
+    const handlePasswordSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        if (!currentUser) return;
+        if (passwordData.newPassword !== passwordData.confirmPassword) {
+            setError("As novas senhas não correspondem.");
+            return;
+        }
+        if (passwordData.newPassword.length < 4) {
+             setError("A nova senha deve ter pelo menos 4 caracteres.");
+            return;
+        }
+        try {
+            updatePassword(currentUser.id, passwordData.newPassword, passwordData.currentPassword);
+            showToast("Senha alterada com sucesso!");
+            setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+            onClose();
+        } catch (err: any) {
+            setError(err.message);
+        }
+    };
+
+    return (
+        <Modal isOpen={isOpen} onClose={onClose} title="Editar Perfil">
+            <div className="space-y-6">
+                <form onSubmit={handleInfoSubmit} className="space-y-4">
+                    <h3 className="text-lg font-bold text-gray-800">Informações Pessoais</h3>
+                    <Input label="Nome" id="firstName" value={formData.firstName} onChange={e => setFormData(p => ({...p, firstName: e.target.value}))} />
+                    <Input label="Sobrenome" id="lastName" value={formData.lastName} onChange={e => setFormData(p => ({...p, lastName: e.target.value}))} />
+                    <div className="flex justify-end">
+                        <Button type="submit">Salvar Alterações</Button>
+                    </div>
+                </form>
+                <div className="border-t border-pink-200"></div>
+                 <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                    <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2"><LockIcon className="w-5 h-5"/> Alterar Senha</h3>
+                    <Input label="Senha Atual" id="currentPassword" type="password" value={passwordData.currentPassword} onChange={e => setPasswordData(p => ({...p, currentPassword: e.target.value}))} required />
+                    <Input label="Nova Senha" id="newPassword" type="password" value={passwordData.newPassword} onChange={e => setPasswordData(p => ({...p, newPassword: e.target.value}))} required />
+                    <Input label="Confirmar Nova Senha" id="confirmPassword" type="password" value={passwordData.confirmPassword} onChange={e => setPasswordData(p => ({...p, confirmPassword: e.target.value}))} required />
+                    {error && <p className="text-red-500 text-sm">{error}</p>}
+                    <div className="flex justify-end">
+                        <Button type="submit" variant="secondary">Alterar Senha</Button>
+                    </div>
+                </form>
+            </div>
+        </Modal>
+    );
+};
+
+// --- SETTINGS MODAL ---
+const SettingsModal: FC<{ isOpen: boolean; onClose: () => void; showToast: (msg: string) => void }> = ({ isOpen, onClose, showToast }) => {
+    const { currentUser, updateUser } = useAuth();
+    const { getRawData, loadRawData } = useData();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleThemeChange = (theme: User['theme']) => {
+        if (currentUser) {
+            updateUser({ id: currentUser.id, theme });
+        }
+    };
+    
+    const handleBackup = async () => {
+        if (!currentUser) return;
+        try {
+            const data = await getRawData(currentUser.id);
+            const jsonString = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const date = new Date().toISOString().split('T')[0];
+            a.download = `backup-${currentUser.username}-${date}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('Backup baixado com sucesso!');
+        } catch (error) {
+            console.error("Erro no backup:", error);
+            showToast('Ocorreu um erro ao criar o backup.');
+        }
+    };
+    
+    const handleRestoreClick = () => {
+        fileInputRef.current?.click();
+    };
+    
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file || !currentUser) return;
+
+        if (window.confirm(`Tem certeza? TODOS os seus dados atuais (clientes, vendas, estoque, etc.) serão substituídos por este backup.`)) {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const text = e.target?.result;
+                    if (typeof text !== 'string') throw new Error("Não foi possível ler o arquivo.");
+                    const data = JSON.parse(text);
+                    await loadRawData(data, currentUser.id);
+                    showToast(`Dados restaurados com sucesso!`);
+                    onClose();
+                } catch (error: any) {
+                     showToast(`Erro ao restaurar: ${error.message}`);
+                }
+            };
+            reader.readAsText(file);
+        }
+        if(fileInputRef.current) fileInputRef.current.value = "";
+    };
+
+
+    return (
+        <Modal isOpen={isOpen} onClose={onClose} title="Configurações">
+            <div className="space-y-6">
+                <div>
+                    <h3 className="text-lg font-bold text-gray-800 mb-3">Aparência do Tema</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <ThemeButton theme="default" label="Padrão" currentTheme={currentUser?.theme} onClick={handleThemeChange} className="bg-pink-100 text-pink-800" />
+                        <ThemeButton theme="neon-chic" label="Neon Chic" currentTheme={currentUser?.theme} onClick={handleThemeChange} className="bg-[#100f1c] text-[#ff00ff]" />
+                    </div>
+                </div>
+                <div className="border-t border-pink-200"></div>
+                <div>
+                    <h3 className="text-lg font-bold text-gray-800 mb-3">Backup e Restauração</h3>
+                    <div className="flex flex-col md:flex-row gap-4">
+                        <Button onClick={handleBackup}><ShieldIcon className="w-5 h-5 mr-2 inline-block"/>Fazer Backup</Button>
+                        <Button onClick={handleRestoreClick} variant="secondary">Restaurar de Arquivo</Button>
+                        <input type="file" accept=".json" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
+                    </div>
+                </div>
+            </div>
+        </Modal>
+    );
+};
+
+const ThemeButton: FC<{ theme: User['theme'], label: string, currentTheme: User['theme'], onClick: (theme: User['theme']) => void, className?: string}> = 
+({ theme, label, currentTheme, onClick, className }) => {
+    const isSelected = theme === currentTheme;
+    return (
+        <button onClick={() => onClick(theme)} className={`p-4 rounded-xl text-center font-bold border-2 transition-all ${className} ${isSelected ? 'border-pink-500 ring-2 ring-pink-500' : 'border-transparent opacity-70 hover:opacity-100'}`}>
+            {label}
+        </button>
+    )
+};
+
 
 // --- BACKUP RESTORE MODAL ---
 const BackupRestoreModal: FC<{isOpen: boolean; onClose: () => void; showToast: (msg: string) => void}> = ({isOpen, onClose, showToast}) => {
